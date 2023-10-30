@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(c1812 VERSION 0.0.1 LANGUAGES C)
 
-file(GLOB SOURCES src/c1812/*.c)
-file(GLOB HEADERS include/c1812/*.h)
+file(GLOB SOURCES src/*.c)
+file(GLOB HEADERS include/*.h)
 
 include_directories(include)
 

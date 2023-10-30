@@ -1,6 +1,6 @@
 #include <stdlib.h>
-#include "c1812/parameters.h"
-#include "c1812/parameters_validation.h"
+#include "parameters.h"
+#include "parameters_validation.h"
 
 c1812_error_t c1812_validate_scalar_data(c1812_parameters_t *parameters) {
 	if (parameters->f < C1812_MIN_FREQUENCY || parameters->f > C1812_MAX_FREQUENCY) {
