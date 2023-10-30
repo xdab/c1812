@@ -1,5 +1,6 @@
-#include "../include/c1812.h"
 #include <stdlib.h>
+#include "../include/parameters.h"
+#include "../include/parameters_validation.h"
 
 c1812_error_t c1812_validate_scalar_data(c1812_parameters_t *parameters) {
 	if (parameters->f < C1812_MIN_FREQUENCY || parameters->f > C1812_MAX_FREQUENCY) {
@@ -22,6 +23,18 @@ c1812_error_t c1812_validate_scalar_data(c1812_parameters_t *parameters) {
 	}
 	if (parameters->ws < C1812_MIN_STREET_WIDTH || parameters->ws > C1812_MAX_STREET_WIDTH) {
 		return C1812_INVALID_STREET_WIDTH;
+	}
+	if (parameters->lon < C1812_MIN_LONGITUDE || parameters->lon > C1812_MAX_LONGITUDE) {
+		return C1812_INVALID_LONGITUDE;
+	}
+	if (parameters->lat < C1812_MIN_LATITUDE || parameters->lat > C1812_MAX_LATITUDE) {
+		return C1812_INVALID_LATITUDE;
+	}
+	if (parameters->N0 < C1812_MIN_SURFACE_REFRACTIVITY || parameters->N0 > C1812_MAX_SURFACE_REFRACTIVITY) {
+		return C1812_INVALID_SURFACE_REFRACTIVITY;
+	}
+	if (parameters->DN < C1812_MIN_REFRACTIVITY_LAPSE_RATE || parameters->DN > C1812_MAX_REFRACTIVITY_LAPSE_RATE) {
+		return C1812_INVALID_REFRACTIVITY_LAPSE_RATE;
 	}
 	return C1812_OK;
 }
@@ -60,6 +73,7 @@ c1812_error_t c1812_validate_vector_data(c1812_parameters_t *parameters)
 			}
 		}
 	}
+	return C1812_OK;
 }
 
 c1812_error_t c1812_validate(c1812_parameters_t *parameters)
