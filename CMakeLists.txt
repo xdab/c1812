@@ -7,7 +7,7 @@ set_target_properties(c1812 PROPERTIES
     SOVERSION 1
     PUBLIC_HEADER include/c1812.h)
 configure_file(c1812.pc.in c1812.pc @ONLY)
-target_include_directories(c1812 PRIVATE ./include)
+target_include_directories(c1812 PRIVATE .)
 install(TARGETS c1812
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
