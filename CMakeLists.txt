@@ -12,3 +12,6 @@ add_library(${PROJECT_NAME} SHARED ${SOURCES})
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+add_executable(demo src/demo.c)
+target_link_libraries(demo ${PROJECT_NAME})
