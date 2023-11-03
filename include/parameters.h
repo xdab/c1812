@@ -3,15 +3,15 @@
 
 typedef enum
 {
-	VERTICAL = 1,
-	HORIZONTAL = 2,
+	POLARIZATION_VERTICAL = 1,
+	POLARIZATION_HORIZONTAL = 2,
 } c1812_polarization_t;
 
 typedef enum
 {
-	COASTAL_LAND = 1,
-	INLAND = 3,
-	SEA = 4,
+	RC_ZONE_COASTAL_LAND = 1,
+	RC_ZONE_INLAND = 3,
+	RC_ZONE_SEA = 4,
 } c1812_radioclimactic_zone_t;
 
 typedef struct
