@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+int main()
+{
 	c1812_parameters_t parameters;
 
 	parameters.f = 0.145;
@@ -20,11 +21,12 @@ int main() {
 	parameters.N0 = 300;
 	parameters.DN = 40;
 
-	const int n = 10; // Number of points
+	const int n = 10;		// Number of points
 	const double dt = 10.0; // Total distance [km]
 
 	double d[n], h[n];
-	for (int i = 0; i < n; i++) {
+	for (int i = 0; i < n; i++)
+	{
 		d[i] = i * dt / (n - 1);
 		h[i] = 75;
 	}
@@ -38,7 +40,8 @@ int main() {
 	c1812_calculate(&parameters, &results);
 
 	putchar('\n');
-	if (results.error == RESULTS_ERR_NONE) {
+	if (results.error == RESULTS_ERR_NONE)
+	{
 		double P = 25; // Power [W]
 		double Gt = 9; // Transmitter antenna gain [dBi]
 		double Gr = 1; // Receiver antenna gain [dBi]
@@ -48,7 +51,9 @@ int main() {
 
 		printf("Loss = %.1f dB\n", results.Lb);
 		printf("Received power = %.1f dBm (S%d + %.1fdB)\n", Prx, S.full_units, S.dB_over);
-	} else {
+	}
+	else
+	{
 		printf("Error: %d\n", results.error);
 	}
 
