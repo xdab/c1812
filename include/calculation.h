@@ -7,6 +7,7 @@
 typedef struct
 {
     // Copied from parameters
+    double p; // time percentage [%]
     double f; // frequency [GHz]
     int n; // number of points
     double *d; // path distances [km]
@@ -39,6 +40,8 @@ typedef struct
     double hte;
     double hre;    
     double theta;
+    double dlt;
+    double dlr;
     
 } c1812_calculation_context_t;
 
