@@ -24,6 +24,7 @@ typedef struct
     double dlm; // longest continuous inland section of the great-circle path [km]
     double b0; // beta0
     double ae, ab; 
+    double omega; // fraction of the path over sea
 
     // Calculated in smooth_earth_heights
     double *g;  // path heights with representative clutter [m]

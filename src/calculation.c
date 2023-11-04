@@ -5,6 +5,7 @@
 #include "beta0.h"
 #include "smooth_earth_heights.h"
 #include "pl_los.h"
+#include "dl_p.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -51,6 +52,22 @@ void copy_ctx_to_pl_los_input(c1812_calculation_context_t *ctx, pl_los_input_t *
 	input->dlr = ctx->dlr;
 }
 
+void copy_ctx_to_dl_p_input(c1812_calculation_context_t *ctx, dl_p_input_t *input)
+{
+	input->n = ctx->n;
+	input->d = ctx->d;
+	input->g = ctx->g;
+	input->hts = ctx->hts;
+	input->hrs = ctx->hrs;
+	input->hstd = ctx->hstd;
+	input->hsrd = ctx->hsrd;
+	input->f = ctx->f;
+	input->omega = ctx->omega;
+	input->p = ctx->p;
+	input->b0 = ctx->b0;
+	input->DN = ctx->DN;
+}
+
 void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 {
 	results->error = RESULTS_ERR_UNKNOWN;
@@ -93,7 +110,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	ctx.ab = ER * 3;					  // (7b)
 
 	// Compute the path fraction over sea Eq (1)
-	double omega = 0.0;
+	ctx.omega = 0.0; // TEMPORARY
 
 	// Derive parameters for the path profile analysis
 	seh_input_t seh_input;
@@ -109,16 +126,20 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 
 	pl_los_output_t pl_los_output;
 	pl_los(&pl_los_input, &pl_los_output);
-	results->Lb = fmax(pl_los_output.Lb0p, pl_los_output.Lbfs); // TODO temporary
 
-	// double Ldp, Ldb, Ld50, Lbulla50, Lbulls50, Ldsph50;
-	// dl_p(&ctx, &Ldp, &Ldb, &Ld50, &Lbulla50, &Lbulls50, &Ldsph50);
+	// dl_p
+	dl_p_input_t dl_p_input;
+	copy_ctx_to_dl_p_input(&ctx, &dl_p_input);
 
-	// // The median basic transmission loss associated with diffraction Eq (42)
-	// double Lbd50 = Lbfs + Ld50;
+	dl_p_output_t dl_p_output;
+	dl_p(&dl_p_input, &dl_p_output);
 
-	// // Basic transmission loss not exceeded for p% time
-	// results->Lb = fmax(Lb0p, Lbd50); // eq (69)
+	// The median basic transmission loss associated with diffraction Eq (42)
+	double Lbd50 = pl_los_output.Lbfs + dl_p_output.Ld50[0];
+	printf("Lbd50 = %.1f\n", Lbd50);
+
+	// Basic transmission loss not exceeded for p% time
+	results->Lb = fmax(pl_los_output.Lb0p, Lbd50); // eq (69)
 
 	results->error = RESULTS_ERR_NONE;
 }

@@ -30,6 +30,10 @@ int main()
 		d[i] = i * dt / (n - 1);
 		h[i] = 75;
 	}
+	
+	// Add hill in the middle of the path
+	h[n / 2] += 30;
+
 	parameters.n = n;
 	parameters.d = d;
 	parameters.h = h;
