@@ -24,31 +24,40 @@ int main(const int argc, const char *argv[])
         return EXIT_FAILURE;
     }
 
-    job_parameters_t job_parameters;
+    // Calculation parameters + some default values
     c1812_parameters_t parameters;
     parameters.ws = 27;
     parameters.Ct = NULL;
-    jobfile_read(&job_parameters, &parameters, argv[1]);
-    printf("Read job file %s\n", argv[1]);
 
+    // Job parameters to be read from specified file
+    job_parameters_t job_parameters;
+    jobfile_read(&job_parameters, &parameters, argv[1]);
+
+    // Open datafiles specified in the job file
     datafile_t datafiles[MAX_DATA_FILES];
     int datafile_count = open_datafiles(datafiles, job_parameters.data);
-    printf("Opened %d datafiles\n", datafile_count);
 
+    // Prepare vector parameters for point-to-point calculation
     prepare_point_to_point(&job_parameters, &parameters, datafiles);
 
+    // Free datafiles as they are no longer needed
     for (int i = 0; i < datafile_count; i++)
         datafile_free(&datafiles[i]);
 
+    // Calculate loss
     c1812_results_t results;
     c1812_calculate(&parameters, &results);
 
     if (results.error == RESULTS_ERR_NONE)
     {
+        // Translate loss to received signal strength
         double Prx = link_budget(job_parameters.txpwr, job_parameters.txgain, job_parameters.rxgain, results.Lb);
+
+        // Translate received signal strength to S-units
         s_unit_t S;
         dBm_to_s_unit_hf(Prx, &S);
 
+        // Print results
         printf("\nLoss = %.1f dB\n", results.Lb);
         if (S.dB_over >= 0.0)
             printf("Received power = %.1f dBm (S%d + %.1fdB)\n", Prx, S.full_units, S.dB_over);
@@ -66,10 +75,10 @@ int main(const int argc, const char *argv[])
 
 void prepare_point_to_point(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles)
 {
-    double x1 = job_parameters->txx; // [m]
-    double y1 = job_parameters->txy; // [m]
-    double x2 = job_parameters->rxx; // [m]
-    double y2 = job_parameters->rxy; // [m]
+    double x1 = job_parameters->txx;
+    double y1 = job_parameters->txy;
+    double x2 = job_parameters->rxx;
+    double y2 = job_parameters->rxy;
     const double KM = 1000.0;
     double distance = sqrt(pow((x2 - x1) / KM, 2) + pow((y2 - y1) / KM, 2)); // [km]
 
@@ -93,11 +102,12 @@ int open_datafiles(datafile_t *datafiles, char filenames[MAX_DATA_FILES][MAX_VAL
 {
     for (int i = 0; i < MAX_DATA_FILES; i++)
     {
+        // Should not happen
         if (filenames[i] == NULL)
             return i;
-        
+
         int len = strlen(filenames[i]);
-        if (len == 0)
+        if (len == 0) // First empty filename marks the end of the list
             return i;
 
         // If data[i] ends in .df, then it's an already processed datafile
@@ -114,6 +124,7 @@ int open_datafiles(datafile_t *datafiles, char filenames[MAX_DATA_FILES][MAX_VAL
             strcpy(datafile_path, filenames[i]);
             strcat(datafile_path, DATAFILE_EXT);
             datafile_store(&datafiles[i], datafile_path);
+            fprintf(stderr, "Datafile %s parsed and stored as %s for future use\n", filenames[i], datafile_path);
             free(datafile_path);
         }
     }
