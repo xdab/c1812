@@ -1,6 +1,7 @@
 #include "dl_p.h"
 #include "dl_delta_bull.h"
 #include "inv_cum_norm.h"
+#include <stdio.h>
 
 void dl_p(dl_p_input_t *input, dl_p_output_t *output)
 {
@@ -15,6 +16,7 @@ void dl_p(dl_p_input_t *input, dl_p_output_t *output)
     dl_delta_bull_input.hsrd = input->hsrd;
     dl_delta_bull_input.f = input->f;
     dl_delta_bull_input.lambda = input->lambda;
+    dl_delta_bull_input.dtot = input->dtot;
     dl_delta_bull_input.omega = input->omega;
 
     // Use the method in 4.3.4 to calculate diffraction loss Ld for median effective
@@ -37,18 +39,37 @@ void dl_p(dl_p_input_t *input, dl_p_output_t *output)
 
         dl_delta_bull_input.ap = input->ab;
         dl_delta_bull(&dl_delta_bull_input, &dl_delta_bull_output);
+
         output->Ldb[0] = dl_delta_bull_output.Ld[0];
         output->Ldb[1] = dl_delta_bull_output.Ld[1];
-        return;
-    }
+        output->Lbulla50 = dl_delta_bull_output.Lbulla;
+        output->Lbulls50 = dl_delta_bull_output.Lbulls;
+        output->Ldsph50[0] = dl_delta_bull_output.Ldsph[0];
+        output->Ldsph50[1] = dl_delta_bull_output.Ldsph[1];
 
-    if (input->p < 50)
+        // print output
+        printf("\n");
+        printf("Ldp: [%f, %f]\n", output->Ldp[0], output->Ldp[1]);
+        printf("Ldb: [%f, %f]\n", output->Ldb[0], output->Ldb[1]);
+        printf("Ld50: [%f, %f]\n", output->Ld50[0], output->Ld50[1]);
+        printf("Lbulla50: %f\n", output->Lbulla50);
+        printf("Lbulls50: %f\n", output->Lbulls50);
+        printf("Ldsph50: [%f, %f]\n", output->Ldsph50[0], output->Ldsph50[1]);
+    }
+    else if (input->p < 50)
     {
         // Use the method in 4.3.4 to calculate diffraction loss Ld for effective
         // Earth radius ap = abeta, as given in equation (7b). Set diffraction loss
         // not exceeded for beta0% time Ldb = Ld
         dl_delta_bull_input.ap = input->ab;
         dl_delta_bull(&dl_delta_bull_input, &dl_delta_bull_output);
+
+        output->Ldb[0] = dl_delta_bull_output.Ld[0];
+        output->Ldb[1] = dl_delta_bull_output.Ld[1];
+        output->Lbulla50 = dl_delta_bull_output.Lbulla;
+        output->Lbulls50 = dl_delta_bull_output.Lbulls;
+        output->Ldsph50[0] = dl_delta_bull_output.Ldsph[0];
+        output->Ldsph50[1] = dl_delta_bull_output.Ldsph[1];
 
         // Compute the interpolation factor Fi
         double Fi;

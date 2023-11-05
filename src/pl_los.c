@@ -1,4 +1,5 @@
 #include "pl_los.h"
+#include "pow.h"
 #include <math.h>
 
 void pl_los(pl_los_input_t *input, pl_los_output_t *output)
@@ -6,7 +7,7 @@ void pl_los(pl_los_input_t *input, pl_los_output_t *output)
     double dfs, Esp, Esb;
 
     // Basic transmission loss due to free-space propagation
-    dfs = sqrt(pow(input->d, 2) + pow((input->hts - input->hrs) / 1000.0, 2)); // (8a)
+    dfs = sqrt(pow2(input->d, 2) + pow2((input->hts - input->hrs) / 1000.0, 2)); // (8a)
     output->Lbfs = 92.4 + 20.0 * log10(input->f) + 20.0 * log10(dfs);          // (8)
 
     // Corrections for multipath and focusing effects at p and b0

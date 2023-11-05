@@ -22,7 +22,7 @@ int main()
 	parameters.DN = 40;
 
 	const int n = 10;		// Number of points
-	const double dt = 10.0; // Total distance [km]
+	const double dt = 20.0; // Total distance [km]
 
 	double d[n], h[n];
 	for (int i = 0; i < n; i++)
@@ -31,9 +31,6 @@ int main()
 		h[i] = 75;
 	}
 	
-	// Add hill in the middle of the path
-	h[n / 2] += 30;
-
 	parameters.n = n;
 	parameters.d = d;
 	parameters.h = h;

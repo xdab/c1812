@@ -14,6 +14,7 @@ install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
 add_executable(demo src/demo.c)
+set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
 target_link_libraries(demo ${PROJECT_NAME})
 target_link_libraries(demo m)
 

@@ -1,5 +1,6 @@
 #include "smooth_earth_heights.h"
 #include "constants.h"
+#include "pow.h"
 #include <math.h>
 #include <stdlib.h>
 
@@ -30,8 +31,8 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         v2 += diff_d * (input->h[i + 1] * (2 * input->d[i + 1] + input->d[i]) + input->h[i] * (input->d[i + 1] + 2 * input->d[i]));
     }
 
-    output->hst = (2 * v1 * input->dtot - v2) / pow(input->dtot, 2);
-    output->hsr = (v2 - v1 * input->dtot) / pow(input->dtot, 2);
+    output->hst = (2 * v1 * input->dtot - v2) / pow2(input->dtot, 2);
+    output->hsr = (v2 - v1 * input->dtot) / pow2(input->dtot, 2);
 
     // Section 5.6.2 Smooth-surface heights for the diffraction model
 

@@ -1,21 +1,24 @@
 #include "dl_se_ft_inner.h"
+#include "pow.h"
 #include <math.h>
 
 // Eq (30)
-#define BETA_DFT_FORMULA(k) ((1 + 1.6 * pow(k, 2) + 0.67 * pow(k, 4)) / (1 + 4.5 * pow(k, 2) + 1.53 * pow(k, 4)))
+#define BETA_DFT_FORMULA(k) ((1 + k * k * (1.6 + 0.67 * k * k)) / (1 + k * k * (4.5 + 1.53 * k * k)))
 
 // Eq (31)
-#define X_FORMULA(beta_dft, adft, f, d) (21.88 * beta_dft * pow(f / pow(adft, 2), 1.0 / 3.0) * d)
+#define X_FORMULA(beta_dft, adft, f, d) (21.88 * beta_dft * cbrt(f / (adft * adft)) * d)
 
 // Eq (32ab)
-#define Y_FORMULA(beta_dft, adft, f, h) (0.9575 * beta_dft * pow(pow(f, 2) / adft, 1.0 / 3.0) * h)
+#define Y_FORMULA(beta_dft, adft, f, h) (0.9575 * beta_dft * cbrt(f * f / adft) * h)
 
 void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *output)
 {
-    // Normalized factor for surface admittance for horizontal (1) and vertical (2) polarizations
+    // Normalized factor for surface admittance for horizontal (0) and vertical (1) polarizations
     double K[2];
-    K[0] = 0.036 * pow(input->adft * input->f, -1.0 / 3.0) * pow(pow(input->epsr - 1, 2) + pow(18 * input->sigma / input->f, 2), -1.0 / 4.0); // Eq (29a)
-    K[1] = K[0] * sqrt(pow(input->epsr, 2) + pow(18 * input->sigma / input->f, 2));                                                           // Eq (29b)
+
+    K[0] = 0.036 * pow2(input->adft * input->f, -1.0 / 3);
+    K[0] *= pow2(pow2(input->epsr - 1, 2) + pow2(18 * input->sigma / input->f, 2), -1.0 / 4); // Eq (29a)
+    K[1] = K[0] * sqrt(input->epsr * input->epsr + pow2(18.0 * input->sigma / input->f, 2));  // Eq (29b)
 
     // Earth ground/polarization parameter
     double beta_dft[2];
@@ -32,6 +35,7 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
     double Yr[2];
     Yt[0] = Y_FORMULA(beta_dft[0], input->adft, input->f, input->hte);
     Yt[1] = Y_FORMULA(beta_dft[1], input->adft, input->f, input->hte);
+
     Yr[0] = Y_FORMULA(beta_dft[0], input->adft, input->f, input->hre);
     Yr[1] = Y_FORMULA(beta_dft[1], input->adft, input->f, input->hre);
 
@@ -48,7 +52,7 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
         }
         else
         {
-            Fx[ii] = -20 * log10(X[ii]) - 5.6488 * pow(X[ii], 1.425); // Eq (33)
+            Fx[ii] = -20 * log10(X[ii]) - 5.6488 * pow2(X[ii], 1.425); // Eq (33)
         }
     }
 
@@ -65,7 +69,7 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
         }
         else
         {
-            GYt[ii] = 20 * log10(Bt[ii] + 0.1 * pow(Bt[ii], 3));
+            GYt[ii] = 20 * log10(Bt[ii] + 0.1 * pow2(Bt[ii], 3));
         }
 
         if (Br[ii] > 2)
@@ -74,7 +78,7 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
         }
         else
         {
-            GYr[ii] = 20 * log10(Br[ii] + 0.1 * pow(Br[ii], 3));
+            GYr[ii] = 20 * log10(Br[ii] + 0.1 * pow2(Br[ii], 3));
         }
 
         if (GYr[ii] < 2 + 20 * log10(K[ii]))

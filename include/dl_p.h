@@ -49,6 +49,7 @@ typedef struct
     double ab;
     double f;
     double lambda;
+    double dtot;
     double omega;
     double p;
     double b0;

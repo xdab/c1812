@@ -1,13 +1,12 @@
 #include "dl_bull.h"
+#include "pow.h"
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
 {
     // Effective Earth curvature Ce (km^-1)
     double Ce = 1 / input->ap;
-    printf("Ce: %f\n", Ce);
 
     // Find the intermediate profile point with the highest slope of the line
     // from the transmitter to the point
@@ -29,13 +28,13 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
 
     if (Stim < Str)
     { // Case 1, Path is LoS
-
         // Find the intermediate profile point with the highest diffraction
         // parameter nu:
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double temp = input->g[i] + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
+            double g = (input->g != NULL) ? input->g[i] : 0.0;
+            double temp = g + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
             temp -= (input->hts * (input->dtot - input->d[i]) + input->hrs * input->d[i]) / input->dtot;
             temp *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
             if (temp > numax)
@@ -43,7 +42,7 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         }
 
         if (numax > -0.78)
-            Luc = 6.9 + 20 * log10(sqrt(pow(numax - 0.1, 2) + 1) + numax - 0.1); // Eq (12), (16)
+            Luc = 6.9 + 20 * log10(sqrt(pow2(numax - 0.1, 2) + 1) + numax - 0.1); // Eq (12), (16)
     }
     else
     { // Path is transhorizon
@@ -67,7 +66,7 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
 
         // The knife-edge loss for the Bullington point is given by
         if (nub > -0.78)
-            Luc = 6.9 + 20 * log10(sqrt(pow(nub - 0.1, 2) + 1) + nub - 0.1); // Eq (12), (20)
+            Luc = 6.9 + 20 * log10(sqrt(pow2(nub - 0.1, 2) + 1) + nub - 0.1); // Eq (12), (20)
     }
 
     // For Luc calculated using either (16) or (20), Bullington diffraction loss

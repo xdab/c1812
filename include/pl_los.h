@@ -15,9 +15,9 @@ typedef struct
 
 typedef struct
 {
-    double Lbfs;
-    double Lb0p;
-    double Lb0b;
+    double Lbfs; // Basic transmission loss due to free-space propagation
+    double Lb0p; // Basic transmission loss not exceeded for time percentage, p%, due to LoS propagation
+    double Lb0b; // Basic transmission loss not exceedd for time percentage, b0%, due to LoS propagation
 } pl_los_output_t;
 
 void pl_los(pl_los_input_t *input, pl_los_output_t *output);

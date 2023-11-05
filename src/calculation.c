@@ -6,6 +6,7 @@
 #include "smooth_earth_heights.h"
 #include "pl_los.h"
 #include "dl_p.h"
+#include "inv_cum_norm.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -27,6 +28,8 @@ void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculation_context_t *c
 {
 	ctx->htc = output->htc;
 	ctx->hrc = output->hrc;
+	ctx->hts = output->hts;
+	ctx->hrs = output->hrs;
 	ctx->hst = output->hst;
 	ctx->hsr = output->hsr;
 	ctx->hstp = output->hstp;
@@ -65,6 +68,7 @@ void copy_ctx_to_dl_p_input(c1812_calculation_context_t *ctx, dl_p_input_t *inpu
 	input->ab = ctx->ab;
 	input->f = ctx->f;
 	input->lambda = ctx->lambda;
+	input->dtot = ctx->dtot;
 	input->omega = ctx->omega;
 	input->p = ctx->p;
 	input->b0 = ctx->b0;
@@ -118,7 +122,6 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	// Derive parameters for the path profile analysis
 	seh_input_t seh_input;
 	copy_ctx_to_seh_input(&ctx, &seh_input);
-
 	seh_output_t seh_output;
 	smooth_earth_heights(&seh_input, &seh_output);
 	copy_seh_output_to_ctx(&seh_output, &ctx);
@@ -126,22 +129,44 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	// pl_los
 	pl_los_input_t pl_los_input;
 	copy_ctx_to_pl_los_input(&ctx, &pl_los_input);
-
 	pl_los_output_t pl_los_output;
 	pl_los(&pl_los_input, &pl_los_output);
 
 	// dl_p
 	dl_p_input_t dl_p_input;
 	copy_ctx_to_dl_p_input(&ctx, &dl_p_input);
-
 	dl_p_output_t dl_p_output;
 	dl_p(&dl_p_input, &dl_p_output);
 
 	// The median basic transmission loss associated with diffraction Eq (42)
-	double Lbd50 = pl_los_output.Lbfs + dl_p_output.Ld50[0];
+	double Lbd50[2];
+	Lbd50[0] = pl_los_output.Lbfs + dl_p_output.Ld50[0];
+	Lbd50[1] = pl_los_output.Lbfs + dl_p_output.Ld50[1];
 
-	// Basic transmission loss not exceeded for p% time
-	results->Lb = fmax(pl_los_output.Lb0p, Lbd50); // eq (69)
+	// The basic tranmission loss associated with diffraction not exceeded for
+	// p% time Eq (43)
+	double Lbd[2];
+	Lbd[0] = pl_los_output.Lb0p + dl_p_output.Ldp[0]; 
+	Lbd[1] = pl_los_output.Lb0p + dl_p_output.Ldp[1];
+	
+	#ifdef EXTRA
+	// A notional minimum basic transmission loss associated with LoS
+	// propagation and over-sea sub-path diffraction
+	double Lminb0p[2];
+	Lminb0p[0] = pl_los_output.Lb0p + (1 - ctx.omega) * dl_p_output.Ldp[0];
+	Lminb0p[1] = pl_los_output.Lb0p + (1 - ctx.omega) * dl_p_output.Ldp[1];
 
+	// eq (40a)
+	double Fi = 1;
+	if (ctx.p >= ctx.b0)
+	{
+		Fi = inv_cum_norm(ctx.p / 100) / inv_cum_norm(ctx.b0 / 100);
+		// eq(59)
+		Lminb0p[0] = Lbd50[0] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[0] - Lbd50[0]) * Fi; 
+		Lminb0p[1] = Lbd50[1] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[1] - Lbd50[1]) * Fi;
+	}
+	#endif
+
+	results->Lb = fmax(pl_los_output.Lb0p, Lbd[(int) parameters->pol]);
 	results->error = RESULTS_ERR_NONE;
 }

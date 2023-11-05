@@ -48,8 +48,8 @@ void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
     dl_se_output_t dl_se_output;
     dl_se_input_t dl_se_input;
     dl_se_input.d = input->dtot;
-    dl_se_input.hte = hte;
-    dl_se_input.hre = hre;
+    dl_se_input.hte = hts1;
+    dl_se_input.hre = hrs1;
     dl_se_input.ap = input->ap;
     dl_se_input.f = input->f;
     dl_se_input.lambda = input->lambda;

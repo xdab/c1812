@@ -3,8 +3,8 @@
 
 typedef enum
 {
+	POLARIZATION_HORIZONTAL = 0,
 	POLARIZATION_VERTICAL = 1,
-	POLARIZATION_HORIZONTAL = 2,
 } c1812_polarization_t;
 
 typedef enum
