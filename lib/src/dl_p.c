@@ -1,7 +1,6 @@
 #include "dl_p.h"
 #include "dl_delta_bull.h"
 #include "inv_cum_norm.h"
-#include <stdio.h>
 
 void dl_p(dl_p_input_t *input, dl_p_output_t *output)
 {
@@ -65,13 +64,9 @@ void dl_p(dl_p_input_t *input, dl_p_output_t *output)
         // Compute the interpolation factor Fi
         double Fi;
         if (input->p > input->b0)
-        {
             Fi = inv_cum_norm(input->p / 100) / inv_cum_norm(input->b0 / 100); // eq (40a)
-        }
         else
-        {
             Fi = 1; // eq (40a)
-        }
 
         // The diffraction loss Ldp not exceeded for p% of time is now given by
         // Ldp = Ld50 + Fi * (Ldb - Ld50) // eq (41)

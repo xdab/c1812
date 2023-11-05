@@ -26,6 +26,7 @@ void copy_ctx_to_seh_input(c1812_calculation_context_t *ctx, seh_input_t *input)
 
 void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculation_context_t *ctx)
 {
+	ctx->g = output->g;
 	ctx->htc = output->htc;
 	ctx->hrc = output->hrc;
 	ctx->hts = output->hts;
@@ -59,7 +60,7 @@ void copy_ctx_to_dl_p_input(c1812_calculation_context_t *ctx, dl_p_input_t *inpu
 {
 	input->n = ctx->n;
 	input->d = ctx->d;
-	input->g = ctx->h;
+	input->g = ctx->g;
 	input->hts = ctx->hts;
 	input->hrs = ctx->hrs;
 	input->hstd = ctx->hstd;
@@ -99,6 +100,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	ctx.n = parameters->n;
 	ctx.d = parameters->d;
 	ctx.h = parameters->h;
+	ctx.Ct = parameters->Ct;
 
 	// Compute dtot - the total great-circle path distance (km)
 	ctx.dtot = parameters->d[parameters->n - 1] - parameters->d[0];
@@ -146,10 +148,10 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	// The basic tranmission loss associated with diffraction not exceeded for
 	// p% time Eq (43)
 	double Lbd[2];
-	Lbd[0] = pl_los_output.Lb0p + dl_p_output.Ldp[0]; 
+	Lbd[0] = pl_los_output.Lb0p + dl_p_output.Ldp[0];
 	Lbd[1] = pl_los_output.Lb0p + dl_p_output.Ldp[1];
-	
-	#ifdef EXTRA
+
+#ifdef EXTRA
 	// A notional minimum basic transmission loss associated with LoS
 	// propagation and over-sea sub-path diffraction
 	double Lminb0p[2];
@@ -162,11 +164,11 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	{
 		Fi = inv_cum_norm(ctx.p / 100) / inv_cum_norm(ctx.b0 / 100);
 		// eq(59)
-		Lminb0p[0] = Lbd50[0] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[0] - Lbd50[0]) * Fi; 
+		Lminb0p[0] = Lbd50[0] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[0] - Lbd50[0]) * Fi;
 		Lminb0p[1] = Lbd50[1] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[1] - Lbd50[1]) * Fi;
 	}
-	#endif
+#endif
 
-	results->Lb = fmax(pl_los_output.Lb0p, Lbd[(int) parameters->pol]);
+	results->Lb = fmax(pl_los_output.Lb0p, Lbd[(int)parameters->pol]);
 	results->error = RESULTS_ERR_NONE;
 }

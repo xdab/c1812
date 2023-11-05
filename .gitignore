@@ -53,3 +53,8 @@ dkms.conf
 
 # Build directory
 build
+
+# Program specific files
+job.txt
+mazowieckie.txt
+*.df
