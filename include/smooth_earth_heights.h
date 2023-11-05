@@ -22,6 +22,8 @@ typedef struct
     double hrc;
     double hst;
     double hsr;
+    double hst_n;
+    double hsr_n;
     double hstp;
     double hsrp;
     double hstd;

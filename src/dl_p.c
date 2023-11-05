@@ -46,15 +46,6 @@ void dl_p(dl_p_input_t *input, dl_p_output_t *output)
         output->Lbulls50 = dl_delta_bull_output.Lbulls;
         output->Ldsph50[0] = dl_delta_bull_output.Ldsph[0];
         output->Ldsph50[1] = dl_delta_bull_output.Ldsph[1];
-
-        // print output
-        printf("\n");
-        printf("Ldp: [%f, %f]\n", output->Ldp[0], output->Ldp[1]);
-        printf("Ldb: [%f, %f]\n", output->Ldb[0], output->Ldb[1]);
-        printf("Ld50: [%f, %f]\n", output->Ld50[0], output->Ld50[1]);
-        printf("Lbulla50: %f\n", output->Lbulla50);
-        printf("Lbulls50: %f\n", output->Lbulls50);
-        printf("Ldsph50: [%f, %f]\n", output->Ldsph50[0], output->Ldsph50[1]);
     }
     else if (input->p < 50)
     {

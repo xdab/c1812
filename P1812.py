@@ -735,7 +735,6 @@ def  smooth_earth_heights(d, h, R, htg, hrg, ae, f):
     alpha_obr = max( HH[1:-1] / ( dtot - d[1:-1] ) ) # Eq (89c)
 
     # Calculate provisional values for the Tx and Rx smooth surface heights
-
     gt = alpha_obt/(alpha_obt + alpha_obr)         # Eq (90e)
     gr = alpha_obr/(alpha_obt + alpha_obr)         # Eq (90f)
 
@@ -1679,7 +1678,6 @@ def dl_bull(d, g, hts, hrs, ap, f):
 
     # Calculate the slope of the line from transmitter to receiver assuming a
     # LoS path
-
     Str = (hrs - hts)/dtot                                         # Eq (14)
 
     if Stim < Str: # Case 1, Path is LoS
@@ -2976,23 +2974,21 @@ def   clutter(i, ClutterCodeType):
     return RxClutterCode, RxP1546Clutter, R2external
 
 if __name__ == '__main__':
-    Ldp, Ldb, Ld50, Lbulla50, Lbulls50, Ldsph50 = dl_p(
-        np.array([0.000000, 2.222222, 4.444444, 6.666667, 8.888889, 11.111111, 13.333333, 15.555556, 17.777778, 20.000000]),
-        np.array([75.000000, 75.000000, 75.000000, 75.000000, 75.000000, 75.000000, 75.000000, 75.000000, 75.000000, 75.000000]),
-        85,
-        85,
-        42.407,
-        39.814,
-        0.145,
-        0.0,
-        50,
-        3.92,
-        40,
-        False
-    )   
-    print("Ldp:", Ldp)
-    print("Ldb:", Ldb)
-    print("Ld50:", Ld50)
-    print("Lbulla50:", Lbulla50)
-    print("Lbulls50:", Lbulls50)
-    print("Ldsph50:", Ldsph50)
+    f = 0.145
+    p = 50
+    d = np.array([0.000000, 2.222222, 4.444444, 6.666667, 8.888889, 11.111111, 13.333333, 15.555556, 17.777778, 20.000000])
+    
+    h = np.full(10, 75.000000)
+    # h[3] += 100
+    
+    R = np.empty(0)
+    Ct = np.empty(0)
+    zone = np.empty(0)
+    pol = 2
+    htg = 10
+    hrg = 10
+    phi_t = phi_r = 52
+    lam_t = lam_r = 21
+
+    Lb = bt_loss(f,p,d,h,R,Ct,zone,htg,hrg,pol,phi_t,phi_r,lam_t,lam_r, DN = 40, N0 = 300)
+    print("Loss =", Lb)

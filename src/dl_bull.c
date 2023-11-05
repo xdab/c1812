@@ -14,7 +14,11 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
     for (int i = 1; i < input->n - 1; i++)
     {
         double g = (input->g != NULL) ? input->g[i] : 0.0;
-        double temp = (g + 500 * Ce * input->d[i] * (input->dtot - input->d[i]) - input->hts) / input->d[i];
+        double temp = g;
+        temp += 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
+        temp -= input->hts;
+        temp /= input->d[i];
+
         if (temp > Stim)
             Stim = temp;
     }

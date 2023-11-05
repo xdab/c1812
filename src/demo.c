@@ -11,18 +11,18 @@ int main()
 
 	parameters.f = 0.145;
 	parameters.p = 50;
-	parameters.htg = 10;
-	parameters.hrg = 10;
+	parameters.htg = 2;
+	parameters.hrg = 2;
 	parameters.pol = POLARIZATION_VERTICAL;
 	parameters.zone = RC_ZONE_INLAND;
-	parameters.ws = 20;
+	parameters.ws = 27;
 	parameters.lon = 21.0;
 	parameters.lat = 52.0;
 	parameters.N0 = 300;
 	parameters.DN = 40;
 
 	const int n = 10;		// Number of points
-	const double dt = 20.0; // Total distance [km]
+	const double dt = 5.0; // Total distance [km]
 
 	double d[n], h[n];
 	for (int i = 0; i < n; i++)
@@ -43,9 +43,9 @@ int main()
 	putchar('\n');
 	if (results.error == RESULTS_ERR_NONE)
 	{
-		double P = 25; // Power [W]
-		double Gt = 9; // Transmitter antenna gain [dBi]
-		double Gr = 1; // Receiver antenna gain [dBi]
+		double P = 5; // Power [W]
+		double Gt = -2; // Transmitter antenna gain [dBi]
+		double Gr = -2; // Receiver antenna gain [dBi]
 		double Prx = link_budget(P, Gt, Gr, results.Lb);
 		s_unit_t S;
 		dBm_to_s_unit(Prx, &S);
