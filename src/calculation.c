@@ -56,12 +56,15 @@ void copy_ctx_to_dl_p_input(c1812_calculation_context_t *ctx, dl_p_input_t *inpu
 {
 	input->n = ctx->n;
 	input->d = ctx->d;
-	input->g = ctx->g;
+	input->g = ctx->h;
 	input->hts = ctx->hts;
 	input->hrs = ctx->hrs;
 	input->hstd = ctx->hstd;
 	input->hsrd = ctx->hsrd;
+	input->ae = ctx->ae;
+	input->ab = ctx->ab;
 	input->f = ctx->f;
+	input->lambda = ctx->lambda;
 	input->omega = ctx->omega;
 	input->p = ctx->p;
 	input->b0 = ctx->b0;
@@ -83,7 +86,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	c1812_calculation_context_t ctx;
 	ctx.p = parameters->p;
 	ctx.f = parameters->f;
-	ctx.lambda = 299792458.0 / (parameters->f * 1e9);
+	ctx.lambda = 0.2998 / ctx.f;
 
 	ctx.htg = parameters->htg;
 	ctx.hrg = parameters->hrg;
@@ -136,7 +139,6 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 
 	// The median basic transmission loss associated with diffraction Eq (42)
 	double Lbd50 = pl_los_output.Lbfs + dl_p_output.Ld50[0];
-	printf("Lbd50 = %.1f\n", Lbd50);
 
 	// Basic transmission loss not exceeded for p% time
 	results->Lb = fmax(pl_los_output.Lb0p, Lbd50); // eq (69)

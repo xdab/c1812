@@ -45,7 +45,10 @@ typedef struct
     double hrs;
     double hstd;
     double hsrd;
+    double ae;
+    double ab;
     double f;
+    double lambda;
     double omega;
     double p;
     double b0;
@@ -57,9 +60,9 @@ typedef struct
     double Ldp[2];
     double Ldb[2];
     double Ld50[2];
-    double Lbulla50[2];
-    double Lbulls50[2];
-    double Ldshp50[2];
+    double Lbulla50;
+    double Lbulls50;
+    double Ldsph50[2];
 } dl_p_output_t;
 
 void dl_p(dl_p_input_t *input, dl_p_output_t *output);

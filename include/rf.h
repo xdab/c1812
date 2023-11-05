@@ -2,16 +2,6 @@
 #define RF_H
 
 /*
- * Free space path loss
- *
- * @param d Distance between transmitter and receiver [km]
- * @param f Frequency [GHz]
- * 
- * @return Free space path loss [dB]
- */
-double fspl(double d, double f);
-
-/*
  * Convert Watts to dBm
  *
  * @param P Power [W]
