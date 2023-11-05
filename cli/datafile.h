@@ -31,4 +31,15 @@ void datafile_free(datafile_t *datafile);
  */
 double datafile_get_nn(datafile_t *datafile, const double x, const double y);
 
+/*
+ * Returns the bilinearly interpolated height to the given x, y coordinates.
+ *
+ * @param datafile The datafile to search.
+ * @param x The x coordinate.
+ * @param y The y coordinate.
+ * 
+ * @return h - The bilinearly interpolated height value.
+ */
+double datafile_get_bilinear(datafile_t *datafile, const double x, const double y);
+
 #endif
