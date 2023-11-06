@@ -62,7 +62,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
 
     // Optimization:
     // Since the datafile is likely sorted by x or y, we can avoid
-    // calling vec_find() for every x and y value by keeping track of the last.
+    // calling vec_double_sorted_unique_insert() for every x and y value by keeping track of the last.
     // When the current value is the same as the last, we know it's already in the vector.
     double last_x = NAN;
     double last_y = NAN;
@@ -150,7 +150,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
 
     // Second pass
     line_index = 0;
-    // Optimization of vec_find() calls
+    // Optimization of nneighbor() calls
     last_x = NAN;
     last_y = NAN;
     int last_x_index = -1;
@@ -174,8 +174,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
                 x = atof(token);
                 if (x != last_x)
                 {
-                    void *found_x = bsearch(&x, datafile->x, datafile->x_size, sizeof(double), double_comparator);
-                    last_x_index = (double *)found_x - datafile->x;
+                    nneighbor(datafile->x, datafile->x_size, x, &last_x_index);
                     last_x = x;
                 }
             }
@@ -184,8 +183,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
                 y = atof(token);
                 if (y != last_y)
                 {
-                    void *found_y = bsearch(&y, datafile->y, datafile->y_size, sizeof(double), double_comparator);
-                    last_y_index = (double *)found_y - datafile->y;
+                    nneighbor(datafile->y, datafile->y_size, y, &last_y_index);
                     last_y = y;
                 }
             }

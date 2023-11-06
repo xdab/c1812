@@ -10,7 +10,7 @@ double nneighbor(const double *array, int size, double target, int *index)
             *index = -1;
         return 0;
     }
-        
+
     if (target <= array[0])
     {
         if (index)
@@ -25,10 +25,14 @@ double nneighbor(const double *array, int size, double target, int *index)
         return array[size - 1];
     }
 
-    int left = 0, right = size, mid = 0;
+    int left = 0, right = size - 1, mid = 0;
     while (left < right)
     {
-        mid = (left + right) / 2;
+        mid = left;
+        double k = target - array[left];
+        k *= (double)right - (double)left;
+        k /= array[right] - array[left];
+        mid += (int)k;
 
         if (array[mid] == target)
         {
