@@ -4,6 +4,13 @@ double nearer(double, double, double);
 
 double nneighbor(const double *array, int size, double target, int *index)
 {
+    if (size == 0)
+    {
+        if (index)
+            *index = -1;
+        return 0;
+    }
+        
     if (target <= array[0])
     {
         if (index)

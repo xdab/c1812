@@ -6,6 +6,8 @@
 #include <string.h>
 #include <math.h>
 
+#include <time.h>
+
 #define READ "r"
 #define READ_BINARY "rb"
 #define WRITE_BINARY "wb"
@@ -43,12 +45,13 @@ void datafile_parse(datafile_t *datafile, const char *path)
 {
     datafile_zero(datafile);
 
+    clock_t first_pass_start = clock();
+
     FILE *datafile_fp = fopen(path, READ);
     if (datafile_fp == NULL)
         exit(EXIT_FAILURE);
 
     char line[MAX_LINE_LENGTH + 1];
-    char value[MAX_VALUE_LENGTH + 1];
     int line_index = 0;
 
     vec_double_t x_vec;
@@ -63,6 +66,9 @@ void datafile_parse(datafile_t *datafile, const char *path)
     // When the current value is the same as the last, we know it's already in the vector.
     double last_x = NAN;
     double last_y = NAN;
+
+    int x_insertions = 0;
+    int y_insertions = 0;
 
     while (fgets(line, MAX_LINE_LENGTH, datafile_fp) != NULL)
     {
@@ -79,33 +85,27 @@ void datafile_parse(datafile_t *datafile, const char *path)
         {
             if (token_index == X_TOKEN_INDEX)
             {
-                strncpy(value, token, MAX_VALUE_LENGTH);
-                x = atof(value);
+                x = atof(token);
                 if (x != last_x)
                 {
-                    int x_index = -1;
-                    vec_find(&x_vec, x, x_index);
-                    if (x_index == -1)
-                        vec_push(&x_vec, x);
+                    vec_double_sorted_unique_insert(&x_vec, x);
+                    x_insertions++;
                     last_x = x;
                 }
             }
             else if (token_index == Y_TOKEN_INDEX)
             {
-                strncpy(value, token, MAX_VALUE_LENGTH);
-                y = atof(value);
+                y = atof(token);
                 if (y != last_y)
                 {
-                    int y_index = -1;
-                    vec_find(&y_vec, y, y_index);
-                    if (y_index == -1)
-                        vec_push(&y_vec, y);
+                    vec_double_sorted_unique_insert(&y_vec, y);
+                    y_insertions++;
                     last_y = y;
                 }
             }
             else if (token_index == H_TOKEN_INDEX)
             {
-                // Ignore for this pass
+                break; // Ignore for this pass
             }
             else
             {
@@ -118,15 +118,20 @@ void datafile_parse(datafile_t *datafile, const char *path)
         }
     }
 
+    clock_t first_pass_end = clock();
+
+    printf("x_insertions: %d, x values: %d\n", x_insertions, x_vec.length);
+    printf("y_insertions: %d, y values: %d\n", y_insertions, y_vec.length);
+
+    clock_t second_pass_start = clock();
+
     datafile->x_size = x_vec.length;
     datafile->x = malloc(datafile->x_size * sizeof(double));
-    vec_sort(&x_vec, double_comparator);
     memcpy(datafile->x, x_vec.data, datafile->x_size * sizeof(double));
     vec_deinit(&x_vec);
 
     datafile->y_size = y_vec.length;
     datafile->y = malloc(datafile->y_size * sizeof(double));
-    vec_sort(&y_vec, double_comparator);
     memcpy(datafile->y, y_vec.data, datafile->y_size * sizeof(double));
     vec_deinit(&y_vec);
 
@@ -166,8 +171,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
         {
             if (token_index == X_TOKEN_INDEX)
             {
-                strncpy(value, token, MAX_VALUE_LENGTH);
-                x = atof(value);
+                x = atof(token);
                 if (x != last_x)
                 {
                     void *found_x = bsearch(&x, datafile->x, datafile->x_size, sizeof(double), double_comparator);
@@ -177,8 +181,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
             }
             else if (token_index == Y_TOKEN_INDEX)
             {
-                strncpy(value, token, MAX_VALUE_LENGTH);
-                y = atof(value);
+                y = atof(token);
                 if (y != last_y)
                 {
                     void *found_y = bsearch(&y, datafile->y, datafile->y_size, sizeof(double), double_comparator);
@@ -188,9 +191,9 @@ void datafile_parse(datafile_t *datafile, const char *path)
             }
             else if (token_index == H_TOKEN_INDEX)
             {
-                strncpy(value, token, MAX_VALUE_LENGTH);
-                double h = atof(value);
+                double h = atof(token);
                 datafile->h[last_y_index][last_x_index] = h;
+                break;
             }
 
             token = strtok(NULL, SPLIT_CHARS);
@@ -199,6 +202,13 @@ void datafile_parse(datafile_t *datafile, const char *path)
     }
 
     fclose(datafile_fp);
+
+    clock_t second_pass_end = clock();
+
+    // Print timing information (4 digit precision)
+    printf("First pass: %.4f seconds\n", (double)(first_pass_end - first_pass_start) / CLOCKS_PER_SEC);
+    printf("Second pass: %.4f seconds\n", (double)(second_pass_end - second_pass_start) / CLOCKS_PER_SEC);
+    printf("Total: %.4f seconds\n", (double)(second_pass_end - second_pass_start + first_pass_end - first_pass_start) / CLOCKS_PER_SEC);
 }
 
 void datafile_store(datafile_t *datafile, const char *path)
