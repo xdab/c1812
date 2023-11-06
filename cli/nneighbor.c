@@ -25,49 +25,46 @@ double nneighbor(const double *array, int size, double target, int *index)
         return array[size - 1];
     }
 
-    int left = 0, right = size - 1, mid = 0;
+    int left = 0, right = size - 1, guess = 0;
     while (left < right)
     {
-        mid = left;
-        double k = target - array[left];
-        k *= (double)right - (double)left;
-        k /= array[right] - array[left];
-        mid += (int)k;
+        double interp = (target - array[left]) / (array[right] - array[left]);
+        guess = left + (int)(interp * (right - left));
 
-        if (array[mid] == target)
+        if (array[guess] == target)
         {
             if (index)
-                *index = mid;
-            return array[mid];
+                *index = guess;
+            return array[guess];
         }
 
-        if (target < array[mid])
+        if (target < array[guess])
         {
-            if (mid > 0 && target > array[mid - 1])
+            if (guess > 0 && target > array[guess - 1])
             {
-                double nearer_value = nearer(array[mid - 1], array[mid], target);
+                double nearer_value = nearer(array[guess - 1], array[guess], target);
                 if (index)
-                    *index = (nearer_value == array[mid - 1]) ? (mid - 1) : mid;
+                    *index = (nearer_value == array[guess - 1]) ? (guess - 1) : guess;
                 return nearer_value;
             }
-            right = mid;
+            right = guess;
         }
         else
         {
-            if (mid < size - 1 && target < array[mid + 1])
+            if (guess < size - 1 && target < array[guess + 1])
             {
-                double nearer_value = nearer(array[mid], array[mid + 1], target);
+                double nearer_value = nearer(array[guess], array[guess + 1], target);
                 if (index)
-                    *index = (nearer_value == array[mid]) ? mid : (mid + 1);
+                    *index = (nearer_value == array[guess]) ? guess : (guess + 1);
                 return nearer_value;
             }
-            left = mid + 1;
+            left = guess + 1;
         }
     }
 
     if (index)
-        *index = mid;
-    return array[mid];
+        *index = guess;
+    return array[guess];
 }
 
 double nearer(double a, double b, double target)
