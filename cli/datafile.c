@@ -6,8 +6,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <time.h>
-
 #define READ "r"
 #define READ_BINARY "rb"
 #define WRITE_BINARY "wb"
@@ -45,8 +43,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
 {
     datafile_zero(datafile);
 
-    clock_t first_pass_start = clock();
-
     FILE *datafile_fp = fopen(path, READ);
     if (datafile_fp == NULL)
         exit(EXIT_FAILURE);
@@ -67,9 +63,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
     double last_x = NAN;
     double last_y = NAN;
 
-    int x_insertions = 0;
-    int y_insertions = 0;
-
     while (fgets(line, MAX_LINE_LENGTH, datafile_fp) != NULL)
     {
         line_index++;
@@ -89,7 +82,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
                 if (x != last_x)
                 {
                     vec_double_sorted_unique_insert(&x_vec, x);
-                    x_insertions++;
                     last_x = x;
                 }
             }
@@ -99,7 +91,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
                 if (y != last_y)
                 {
                     vec_double_sorted_unique_insert(&y_vec, y);
-                    y_insertions++;
                     last_y = y;
                 }
             }
@@ -117,13 +108,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
             token_index++;
         }
     }
-
-    clock_t first_pass_end = clock();
-
-    printf("x_insertions: %d, x values: %d\n", x_insertions, x_vec.length);
-    printf("y_insertions: %d, y values: %d\n", y_insertions, y_vec.length);
-
-    clock_t second_pass_start = clock();
 
     datafile->x_size = x_vec.length;
     datafile->x = malloc(datafile->x_size * sizeof(double));
@@ -200,13 +184,6 @@ void datafile_parse(datafile_t *datafile, const char *path)
     }
 
     fclose(datafile_fp);
-
-    clock_t second_pass_end = clock();
-
-    // Print timing information (4 digit precision)
-    printf("First pass: %.4f seconds\n", (double)(first_pass_end - first_pass_start) / CLOCKS_PER_SEC);
-    printf("Second pass: %.4f seconds\n", (double)(second_pass_end - second_pass_start) / CLOCKS_PER_SEC);
-    printf("Total: %.4f seconds\n", (double)(second_pass_end - second_pass_start + first_pass_end - first_pass_start) / CLOCKS_PER_SEC);
 }
 
 void datafile_store(datafile_t *datafile, const char *path)
