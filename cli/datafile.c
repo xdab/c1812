@@ -16,6 +16,9 @@
 #define Y_TOKEN_INDEX 1
 #define H_TOKEN_INDEX 2
 
+int _datafile_parse_first_stage(datafile_t *datafile, FILE *file);
+int _datafile_parse_second_stage(datafile_t *datafile, FILE *file);
+
 void datafile_zero(datafile_t *datafile)
 {
     datafile->x = NULL;
@@ -27,26 +30,42 @@ void datafile_zero(datafile_t *datafile)
     datafile->h = NULL;
 }
 
-// qsort-compatible comparator for doubles
-int double_comparator(const void *p, const void *q)
-{
-    double p_d = *(double *)p;
-    double q_d = *(double *)q;
-    if (p_d == q_d)
-        return 0;
-    if (p_d > q_d)
-        return 1;
-    return -1;
-}
-
-void datafile_parse(datafile_t *datafile, const char *path)
+int datafile_parse(datafile_t *datafile, const char *path)
 {
     datafile_zero(datafile);
 
     FILE *datafile_fp = fopen(path, READ);
     if (datafile_fp == NULL)
-        exit(EXIT_FAILURE);
+    {
+        fprintf(stderr, "datafile_parse: fopen()\n");
+        return EXIT_FAILURE;
+    }
 
+    if (_datafile_parse_first_stage(datafile, datafile_fp))
+    {
+        fprintf(stderr, "datafile_parse: _datafile_parse_first_stage()\n");
+        return EXIT_FAILURE;
+    }
+
+    rewind(datafile_fp);
+
+    if (_datafile_parse_second_stage(datafile, datafile_fp))
+    {
+        fprintf(stderr, "datafile_parse: _datafile_parse_second_stage()\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fclose(datafile_fp))
+    {
+        fprintf(stderr, "datafile_parse: fclose()\n");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int _datafile_parse_first_stage(datafile_t *datafile, FILE *file)
+{
     char line[MAX_LINE_LENGTH + 1];
     int line_index = 0;
 
@@ -63,7 +82,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
     double last_x = NAN;
     double last_y = NAN;
 
-    while (fgets(line, MAX_LINE_LENGTH, datafile_fp) != NULL)
+    while (fgets(line, MAX_LINE_LENGTH, file) != NULL)
     {
         line_index++;
         int len = strlen(line);
@@ -76,32 +95,32 @@ void datafile_parse(datafile_t *datafile, const char *path)
         double x, y;
         while (token != NULL)
         {
-            if (token_index == X_TOKEN_INDEX)
+            switch (token_index)
             {
+            case X_TOKEN_INDEX:
                 x = atof(token);
                 if (x != last_x)
                 {
                     vec_double_sorted_unique_insert(&x_vec, x);
                     last_x = x;
                 }
-            }
-            else if (token_index == Y_TOKEN_INDEX)
-            {
+                break;
+
+            case Y_TOKEN_INDEX:
                 y = atof(token);
                 if (y != last_y)
                 {
                     vec_double_sorted_unique_insert(&y_vec, y);
                     last_y = y;
                 }
-            }
-            else if (token_index == H_TOKEN_INDEX)
-            {
+                break;
+
+            case H_TOKEN_INDEX:
                 break; // Ignore for this pass
-            }
-            else
-            {
-                fprintf(stderr, "Too many tokens on line %d\n", line_index);
-                exit(EXIT_FAILURE);
+
+            default:
+                fprintf(stderr, "datafile_parse: invalid token index %d\n", token_index);
+                return EXIT_FAILURE;
             }
 
             token = strtok(NULL, SPLIT_CHARS);
@@ -111,36 +130,59 @@ void datafile_parse(datafile_t *datafile, const char *path)
 
     datafile->x_size = x_vec.length;
     datafile->x = malloc(datafile->x_size * sizeof(double));
+    if (datafile->x == NULL)
+    {
+        fprintf(stderr, "datafile_parse: malloc() x\n");
+        return EXIT_FAILURE;
+    }
     memcpy(datafile->x, x_vec.data, datafile->x_size * sizeof(double));
     vec_deinit(&x_vec);
 
     datafile->y_size = y_vec.length;
     datafile->y = malloc(datafile->y_size * sizeof(double));
+    if (datafile->y == NULL)
+    {
+        fprintf(stderr, "datafile_parse: malloc() y\n");
+        return EXIT_FAILURE;
+    }
     memcpy(datafile->y, y_vec.data, datafile->y_size * sizeof(double));
     vec_deinit(&y_vec);
 
-    // Now x and y dimensions are known, thus the h matrix can be allocated
-    // and filled in the second pass
-    rewind(datafile_fp);
-
-    // Allocate h matrix and fill with nans
     datafile->h = malloc(datafile->y_size * sizeof(double *));
+    if (datafile->h == NULL)
+    {
+        fprintf(stderr, "datafile_parse: malloc() h\n");
+        return EXIT_FAILURE;
+    }
+
     for (int i = 0; i < datafile->y_size; i++)
     {
         datafile->h[i] = malloc(datafile->x_size * sizeof(double));
+        if (datafile->h[i] == NULL)
+        {
+            fprintf(stderr, "datafile_parse: malloc() h @ y=%f\n", datafile->y[i]);
+            return EXIT_FAILURE;
+        }
+
         for (int j = 0; j < datafile->x_size; j++)
             datafile->h[i][j] = NAN;
     }
 
-    // Second pass
-    line_index = 0;
+    return EXIT_SUCCESS;
+}
+
+int _datafile_parse_second_stage(datafile_t *datafile, FILE *file)
+{
+    char line[MAX_LINE_LENGTH + 1];
+    int line_index = 0;
+
     // Optimization of nneighbor() calls
-    last_x = NAN;
-    last_y = NAN;
+    double last_x = NAN;
+    double last_y = NAN;
     int last_x_index = -1;
     int last_y_index = -1;
 
-    while (fgets(line, MAX_LINE_LENGTH, datafile_fp) != NULL)
+    while (fgets(line, MAX_LINE_LENGTH, file) != NULL)
     {
         line_index++;
         int len = strlen(line);
@@ -173,8 +215,7 @@ void datafile_parse(datafile_t *datafile, const char *path)
             }
             else if (token_index == H_TOKEN_INDEX)
             {
-                double h = atof(token);
-                datafile->h[last_y_index][last_x_index] = h;
+                datafile->h[last_y_index][last_x_index] = atof(token);
                 break;
             }
 
@@ -183,38 +224,139 @@ void datafile_parse(datafile_t *datafile, const char *path)
         }
     }
 
-    fclose(datafile_fp);
+    return EXIT_SUCCESS;
 }
 
-void datafile_store(datafile_t *datafile, const char *path)
+int datafile_store(datafile_t *datafile, const char *path)
 {
     FILE *datafile_fp = fopen(path, WRITE_BINARY);
-    fwrite(&datafile->y_size, sizeof(int), 1, datafile_fp);
-    fwrite(&datafile->x_size, sizeof(int), 1, datafile_fp);
-    fwrite(datafile->y, sizeof(double), datafile->y_size, datafile_fp);
-    fwrite(datafile->x, sizeof(double), datafile->x_size, datafile_fp);
+    if (datafile_fp == NULL)
+    {
+        fprintf(stderr, "datafile_store: fopen()\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fwrite(&datafile->y_size, sizeof(int), 1, datafile_fp) != 1)
+    {
+        fprintf(stderr, "datafile_store: fwrite() y_size\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fwrite(&datafile->x_size, sizeof(int), 1, datafile_fp) != 1)
+    {
+        fprintf(stderr, "datafile_store: fwrite() x_size\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fwrite(datafile->y, sizeof(double), datafile->y_size, datafile_fp) != datafile->y_size)
+    {
+        fprintf(stderr, "datafile_store: fwrite() y\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fwrite(datafile->x, sizeof(double), datafile->x_size, datafile_fp) != datafile->x_size)
+    {
+        fprintf(stderr, "datafile_store: fwrite() x\n");
+        return EXIT_FAILURE;
+    }
+
     for (int i = 0; i < datafile->y_size; i++)
-        fwrite(datafile->h[i], sizeof(double), datafile->x_size, datafile_fp);
-    fclose(datafile_fp);
+    {
+        if (fwrite(datafile->h[i], sizeof(double), datafile->x_size, datafile_fp) != datafile->x_size)
+        {
+            fprintf(stderr, "datafile_store: fwrite() h @ y=%f\n", datafile->y[i]);
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (fclose(datafile_fp))
+    {
+        fprintf(stderr, "datafile_store: fclose()\n");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
-void datafile_open(datafile_t *datafile, const char *path)
+int datafile_open(datafile_t *datafile, const char *path)
 {
     datafile_zero(datafile);
+
     FILE *datafile_fp = fopen(path, READ_BINARY);
-    fread(&datafile->y_size, sizeof(int), 1, datafile_fp);
-    fread(&datafile->x_size, sizeof(int), 1, datafile_fp);
+    if (datafile_fp == NULL)
+    {
+        fprintf(stderr, "datafile_open: fopen()\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fread(&datafile->y_size, sizeof(int), 1, datafile_fp) != 1)
+    {
+        fprintf(stderr, "datafile_open: fread() y_size\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fread(&datafile->x_size, sizeof(int), 1, datafile_fp) != 1)
+    {
+        fprintf(stderr, "datafile_open: fread() x_size\n");
+        return EXIT_FAILURE;
+    }
+
     datafile->y = malloc(datafile->y_size * sizeof(double));
+    if (datafile->y == NULL)
+    {
+        fprintf(stderr, "datafile_open: malloc() y\n");
+        return EXIT_FAILURE;
+    }
+
     datafile->x = malloc(datafile->x_size * sizeof(double));
-    fread(datafile->y, sizeof(double), datafile->y_size, datafile_fp);
-    fread(datafile->x, sizeof(double), datafile->x_size, datafile_fp);
+    if (datafile->x == NULL)
+    {
+        fprintf(stderr, "datafile_open: malloc() x\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fread(datafile->y, sizeof(double), datafile->y_size, datafile_fp) != datafile->y_size)
+    {
+        fprintf(stderr, "datafile_open: fread() y\n");
+        return EXIT_FAILURE;
+    }
+
+    if (fread(datafile->x, sizeof(double), datafile->x_size, datafile_fp) != datafile->x_size)
+    {
+        fprintf(stderr, "datafile_open: fread() x\n");
+        return EXIT_FAILURE;
+    }
+
     datafile->h = malloc(datafile->y_size * sizeof(double *));
+    if (datafile->h == NULL)
+    {
+        fprintf(stderr, "datafile_open: malloc() h\n");
+        return EXIT_FAILURE;
+    }
+
     for (int i = 0; i < datafile->y_size; i++)
     {
         datafile->h[i] = malloc(datafile->x_size * sizeof(double));
-        fread(datafile->h[i], sizeof(double), datafile->x_size, datafile_fp);
+        if (datafile->h[i] == NULL)
+        {
+            fprintf(stderr, "datafile_open: malloc() h @ y=%f\n", datafile->y[i]);
+            return EXIT_FAILURE;
+        }
+
+        if (fread(datafile->h[i], sizeof(double), datafile->x_size, datafile_fp) != datafile->x_size)
+        {
+            fprintf(stderr, "datafile_open: fread() h @ y=%f\n", datafile->y[i]);
+            return EXIT_FAILURE;
+        }
     }
-    fclose(datafile_fp);
+
+    if (fclose(datafile_fp))
+    {
+        fprintf(stderr, "datafile_open: fclose()\n");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
 
 void datafile_free(datafile_t *datafile)

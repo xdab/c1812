@@ -13,9 +13,9 @@ typedef struct
 // I/O
 
 void datafile_zero(datafile_t *datafile);
-void datafile_parse(datafile_t *datafile, const char *path);
-void datafile_store(datafile_t *datafile, const char *path);
-void datafile_open(datafile_t *datafile, const char *path);
+int datafile_parse(datafile_t *datafile, const char *path);
+int datafile_store(datafile_t *datafile, const char *path);
+int datafile_open(datafile_t *datafile, const char *path);
 void datafile_free(datafile_t *datafile);
 
 // Operations
