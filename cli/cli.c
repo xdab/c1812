@@ -149,8 +149,6 @@ int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafi
 
     for (double angle = 0.0; angle < 360.0; angle += job_parameters->ares)
     {
-        printf("Angle: %.1f\n", angle);
-
         x2 = job_parameters->txx + job_parameters->radius * cos(angle * M_PI / 180.0);
         y2 = job_parameters->txy + job_parameters->radius * sin(angle * M_PI / 180.0);
 
