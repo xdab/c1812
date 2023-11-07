@@ -39,6 +39,8 @@
 #define FIELD_ARES "ares"
 #define FIELD_DATA "data"
 
+int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value);
+
 void jobfile_zero(job_parameters_t *job_parameters)
 {
     job_parameters->txx = 0.0;
@@ -109,7 +111,7 @@ int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameter
             return EXIT_FAILURE;
         }
 
-        if (jobfile_set_field(job_parameters, parameters, field, value))
+        if (_jobfile_set_field(job_parameters, parameters, field, value))
         {
             fprintf(stderr, "jobfile_read: jobfile_set_field()\n");
             return EXIT_FAILURE;
@@ -125,7 +127,7 @@ int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameter
     return EXIT_SUCCESS;
 }
 
-int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value)
+int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value)
 {
     for (int i = 0; i < strlen(field); i++)
         field[i] = tolower(field[i]);
@@ -142,7 +144,7 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             parameters->pol = POLARIZATION_VERTICAL;
         else
         {
-            fprintf(stderr, "jobfile_set_field: polarization (%s) must be either horizontal or vertical, not %s\n", FIELD_POL, value);
+            fprintf(stderr, "_jobfile_set_field: polarization (%s) must be either horizontal or vertical, not %s\n", FIELD_POL, value);
             return EXIT_FAILURE;
         }
     }
@@ -158,7 +160,7 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             parameters->zone = RC_ZONE_SEA;
         else
         {
-            fprintf(stderr, "jobfile_set_field: zone (%s) must be either inland, coastal or sea, not %s\n", FIELD_ZONE, value);
+            fprintf(stderr, "_jobfile_set_field: zone (%s) must be either inland, coastal or sea, not %s\n", FIELD_ZONE, value);
             return EXIT_FAILURE;
         }
     }
@@ -203,14 +205,14 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             i++;
         if (i == MAX_DATA_FILES)
         {
-            fprintf(stderr, "jobfile_set_field: too many data files\n");
+            fprintf(stderr, "_jobfile_set_field: too many data files\n");
             return EXIT_FAILURE;
         }
         strncpy(job_parameters->data[i], value, MAX_VALUE_LENGTH);
     }
     else
     {
-        fprintf(stderr, "jobfile_set_field: unknown field %s\n", field);
+        fprintf(stderr, "_jobfile_set_field: unknown field %s\n", field);
         return EXIT_FAILURE;
     }
 

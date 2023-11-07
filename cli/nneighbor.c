@@ -1,6 +1,6 @@
 #include "nneighbor.h"
 
-double nearer(double, double, double);
+double _nearer(double, double, double);
 
 double nneighbor(const double *array, int size, double target, int *index)
 {
@@ -42,7 +42,7 @@ double nneighbor(const double *array, int size, double target, int *index)
         {
             if (guess > 0 && target > array[guess - 1])
             {
-                double nearer_value = nearer(array[guess - 1], array[guess], target);
+                double nearer_value = _nearer(array[guess - 1], array[guess], target);
                 if (index)
                     *index = (nearer_value == array[guess - 1]) ? (guess - 1) : guess;
                 return nearer_value;
@@ -53,7 +53,7 @@ double nneighbor(const double *array, int size, double target, int *index)
         {
             if (guess < size - 1 && target < array[guess + 1])
             {
-                double nearer_value = nearer(array[guess], array[guess + 1], target);
+                double nearer_value = _nearer(array[guess], array[guess + 1], target);
                 if (index)
                     *index = (nearer_value == array[guess]) ? guess : (guess + 1);
                 return nearer_value;
@@ -67,7 +67,7 @@ double nneighbor(const double *array, int size, double target, int *index)
     return array[guess];
 }
 
-double nearer(double a, double b, double target)
+double _nearer(double a, double b, double target)
 {
     if (target - a >= b - target)
         return b;
