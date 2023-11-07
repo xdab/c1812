@@ -29,7 +29,7 @@ typedef struct
 
 } job_parameters_t;
 
-int jobfile_zero(job_parameters_t *job_parameters);
+void jobfile_zero(job_parameters_t *job_parameters);
 int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameters, const char *path);
 int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value);
 

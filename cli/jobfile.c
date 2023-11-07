@@ -39,7 +39,7 @@
 #define FIELD_ARES "ares"
 #define FIELD_DATA "data"
 
-int jobfile_zero(job_parameters_t *job_parameters)
+void jobfile_zero(job_parameters_t *job_parameters)
 {
     job_parameters->txx = 0.0;
     job_parameters->txy = 0.0;
@@ -57,8 +57,6 @@ int jobfile_zero(job_parameters_t *job_parameters)
     job_parameters->ares = 0.0;
 
     memset(job_parameters->data, 0, sizeof(job_parameters->data));
-
-    return EXIT_SUCCESS;
 }
 
 int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameters, const char *path)
@@ -68,17 +66,19 @@ int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameter
     FILE *jobfile = fopen(path, READ);
     if (jobfile == NULL)
     {
-        fprintf(stderr, "Could not open job file: %s\n", path);
+        fprintf(stderr, "jobfile_read: fopen()\n");
         return EXIT_FAILURE;
     }
 
+    int line_index = 0;
     char line[MAX_LINE_LENGTH + 1];
     char field[MAX_FIELD_LENGTH + 1];
     char value[MAX_VALUE_LENGTH + 1];
-    int line_index = 0;
+
     while (fgets(line, MAX_LINE_LENGTH, jobfile) != NULL)
     {
         line_index++;
+
         int len = strlen(line);
         if (len <= 1)
             continue;
@@ -95,27 +95,32 @@ int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameter
                 strncpy(value, token, MAX_VALUE_LENGTH);
             else
             {
-                fprintf(stderr, "Too many tokens on line %d\n", line_index);
+                fprintf(stderr, "jobfile_read: too many tokens on line %d\n", line_index);
                 return EXIT_FAILURE;
             }
+
             token = strtok(NULL, SPLIT_CHARS);
             token_index++;
         }
 
         if (token_index != 2)
         {
-            fprintf(stderr, "Too few tokens on line %d\n", line_index);
+            fprintf(stderr, "jobfile_read: too few tokens on line %d\n", line_index);
             return EXIT_FAILURE;
         }
 
         if (jobfile_set_field(job_parameters, parameters, field, value))
         {
-            fprintf(stderr, "Could not set field %s to value %s on line %d\n", field, value, line_index);
+            fprintf(stderr, "jobfile_read: jobfile_set_field()\n");
             return EXIT_FAILURE;
         }
     }
 
-    fclose(jobfile);
+    if (fclose(jobfile))
+    {
+        fprintf(stderr, "jobfile_read: fclose()\n");
+        return EXIT_FAILURE;
+    }
 
     return EXIT_SUCCESS;
 }
@@ -137,7 +142,7 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             parameters->pol = POLARIZATION_VERTICAL;
         else
         {
-            fprintf(stderr, "Polarization (%s) must be either horizontal or vertical, not %s\n", FIELD_POL, value);
+            fprintf(stderr, "jobfile_set_field: polarization (%s) must be either horizontal or vertical, not %s\n", FIELD_POL, value);
             return EXIT_FAILURE;
         }
     }
@@ -153,7 +158,7 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             parameters->zone = RC_ZONE_SEA;
         else
         {
-            fprintf(stderr, "Zone (%s) must be either inland, coastal or sea, not %s\n", FIELD_ZONE, value);
+            fprintf(stderr, "jobfile_set_field: zone (%s) must be either inland, coastal or sea, not %s\n", FIELD_ZONE, value);
             return EXIT_FAILURE;
         }
     }
@@ -198,14 +203,14 @@ int jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *para
             i++;
         if (i == MAX_DATA_FILES)
         {
-            fprintf(stderr, "Too many data files\n");
+            fprintf(stderr, "jobfile_set_field: too many data files\n");
             return EXIT_FAILURE;
         }
         strncpy(job_parameters->data[i], value, MAX_VALUE_LENGTH);
     }
     else
     {
-        fprintf(stderr, "Invalid field: %s\n", field);
+        fprintf(stderr, "jobfile_set_field: unknown field %s\n", field);
         return EXIT_FAILURE;
     }
 
