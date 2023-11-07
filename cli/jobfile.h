@@ -25,6 +25,7 @@ typedef struct
     double xres;   // Calculation spatial resolution [m]
     double ares;   // Calculation angular resolution [deg]
 
+    char out[MAX_VALUE_LENGTH];                  // Output file path
     char data[MAX_DATA_FILES][MAX_VALUE_LENGTH]; // Datafile paths
 
 } job_parameters_t;

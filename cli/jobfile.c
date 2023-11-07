@@ -34,30 +34,32 @@
 #define FIELD_RXH "rxh"
 #define FIELD_RXGAIN "rxgain"
 #define FIELD_P "p"
-#define FIELD_RADIUS "radius"
 #define FIELD_XRES "xres"
+#define FIELD_RADIUS "radius"
 #define FIELD_ARES "ares"
+#define FIELD_OUT "out"
 #define FIELD_DATA "data"
 
 int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value);
 
 void jobfile_zero(job_parameters_t *job_parameters)
 {
-    job_parameters->txx = 0.0;
-    job_parameters->txy = 0.0;
-    job_parameters->txh = 0.0;
-    job_parameters->txpwr = 0.0;
+    job_parameters->txx = NAN;
+    job_parameters->txy = NAN;
+    job_parameters->txh = NAN;
+    job_parameters->txpwr = NAN;
     job_parameters->txgain = 0.0;
 
     job_parameters->rxx = NAN;
     job_parameters->rxy = NAN;
-    job_parameters->rxh = 0.0;
+    job_parameters->rxh = NAN;
     job_parameters->rxgain = 0.0;
 
-    job_parameters->radius = 0.0;
-    job_parameters->xres = 0.0;
-    job_parameters->ares = 0.0;
+    job_parameters->radius = NAN;
+    job_parameters->xres = NAN;
+    job_parameters->ares = NAN;
 
+    memset(job_parameters->out, 0, sizeof(job_parameters->out));
     memset(job_parameters->data, 0, sizeof(job_parameters->data));
 }
 
@@ -198,6 +200,15 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
         job_parameters->xres = atof(value);
     else if (strcmp(field, FIELD_ARES) == EQUAL)
         job_parameters->ares = atof(value);
+    else if (strcmp(field, FIELD_OUT) == EQUAL)
+    {
+        if (strlen(job_parameters->out) > 0)
+        {
+            fprintf(stderr, "_jobfile_set_field: out already set\n");
+            return EXIT_FAILURE;
+        }
+        strncpy(job_parameters->out, value, MAX_VALUE_LENGTH);
+    }
     else if (strcmp(field, FIELD_DATA) == EQUAL)
     {
         int i = 0;
