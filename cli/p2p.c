@@ -75,6 +75,7 @@ int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters
     if (h == NULL)
     {
         fprintf(stderr, "prepare_point_to_point: malloc() h\n");
+        free(d);
         return EXIT_FAILURE;
     }
 

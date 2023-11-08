@@ -143,6 +143,7 @@ int _datafile_parse_first_stage(datafile_t *datafile, FILE *file)
     if (datafile->y == NULL)
     {
         fprintf(stderr, "datafile_parse: malloc() y\n");
+        free(datafile->x);
         return EXIT_FAILURE;
     }
     memcpy(datafile->y, y_vec.data, datafile->y_size * sizeof(double));
@@ -152,6 +153,8 @@ int _datafile_parse_first_stage(datafile_t *datafile, FILE *file)
     if (datafile->h == NULL)
     {
         fprintf(stderr, "datafile_parse: malloc() h\n");
+        free(datafile->x);
+        free(datafile->y);
         return EXIT_FAILURE;
     }
 
@@ -161,6 +164,11 @@ int _datafile_parse_first_stage(datafile_t *datafile, FILE *file)
         if (datafile->h[i] == NULL)
         {
             fprintf(stderr, "datafile_parse: malloc() h @ y=%f\n", datafile->y[i]);
+            free(datafile->x);
+            free(datafile->y);
+            for (int j = 0; j <= i; j++)
+                free(datafile->h[j]);
+            free(datafile->h);
             return EXIT_FAILURE;
         }
 
