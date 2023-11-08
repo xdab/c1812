@@ -24,6 +24,7 @@ typedef struct
     double radius; // Point-to-area calculation radius [m]
     double xres;   // Calculation spatial resolution [m]
     double ares;   // Calculation angular resolution [deg]
+    int threads;   // Number of threads to use, default 1
 
     char out[MAX_VALUE_LENGTH];                  // Output file path
     char data[MAX_DATA_FILES][MAX_VALUE_LENGTH]; // Datafile paths

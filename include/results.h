@@ -6,9 +6,9 @@
 
 typedef enum
 {
-	RESULTS_ERR_NONE,
-	RESULTS_ERR_PARAMETERS,
-	RESULTS_ERR_UNKNOWN
+	RESULTS_ERR_NONE = 0,
+	RESULTS_ERR_PARAMETERS = 1,
+	RESULTS_ERR_UNKNOWN = 2
 } c1812_results_error_t;
 
 typedef struct 

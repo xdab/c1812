@@ -37,6 +37,7 @@
 #define FIELD_XRES "xres"
 #define FIELD_RADIUS "radius"
 #define FIELD_ARES "ares"
+#define FIELD_THREADS "threads"
 #define FIELD_OUT "out"
 #define FIELD_DATA "data"
 
@@ -58,6 +59,7 @@ void jobfile_zero(job_parameters_t *job_parameters)
     job_parameters->radius = NAN;
     job_parameters->xres = NAN;
     job_parameters->ares = NAN;
+    job_parameters->threads = 1;
 
     memset(job_parameters->out, 0, sizeof(job_parameters->out));
     memset(job_parameters->data, 0, sizeof(job_parameters->data));
@@ -200,6 +202,8 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
         job_parameters->xres = atof(value);
     else if (strcmp(field, FIELD_ARES) == EQUAL)
         job_parameters->ares = atof(value);
+    else if (strcmp(field, FIELD_THREADS) == EQUAL)
+        job_parameters->threads = atoi(value);
     else if (strcmp(field, FIELD_OUT) == EQUAL)
     {
         if (strlen(job_parameters->out) > 0)

@@ -13,6 +13,7 @@ if __name__ == '__main__':
     with open('results.rf', 'rb') as f:
         f.seek(0, 2)
         file_size = f.tell()
+        print(round(file_size / 1024, 1), 'KiB')
         f.seek(0, 0)
 
         x0 = struct.unpack('d', f.read(8))[0]
@@ -34,6 +35,7 @@ if __name__ == '__main__':
 
         angles_a = np.array(angles)
         losses_a = np.array(losses)
+
 
     distances_a = np.linspace(0, radius, num=n)
 
@@ -71,7 +73,8 @@ if __name__ == '__main__':
     zi = tx_power_dbm - zi + tx_gain + rx_gain
     zi = (zi - s1_dbm) / s_dbm
     levels = np.linspace(1, 9, num=9)
-    # plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap=plt.cm.jet)
-    plt.contourf(xi, yi, zi, levels=np.linspace(s1_dbm, s9_dbm, num=10), cmap=plt.cm.jet, extend='both')
-    plt.colorbar()
-    plt.show()
+    plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap=plt.cm.jet)
+    # plt.contourf(xi, yi, zi, levels=levels, vmin=1, vmax=9, cmap=plt.cm.jet, extend='both')
+    plt.axis('equal')
+    plt.tight_layout()
+    plt.savefig('results.png', dpi=300)
