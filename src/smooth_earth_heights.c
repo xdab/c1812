@@ -2,21 +2,11 @@
 #include "constants.h"
 #include "pow.h"
 #include <math.h>
-#include <stdlib.h>
 
 void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 {
     output->hts = input->h[0] + input->htg;
     output->hrs = input->h[input->n - 1] + input->hrg;
-
-    // Modify the path by adding representative clutter, according to Section 3.2
-    // excluding the first and the last point
-    double *g = (double *)malloc(sizeof(double) * input->n);
-    for (int i = 1; i < input->n - 1; i++)
-        g[i] = input->h[i] + ((input->Ct != NULL) ? input->Ct[i] : 0.0);
-    g[0] = input->h[0];
-    g[input->n - 1] = input->h[input->n - 1];
-    output->g = g;
 
     // Compute htc and hrc as defined in Table 5 (P.1812-6)
     output->htc = output->hts;
@@ -38,21 +28,16 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     output->hsr_n = output->hsr;
 
     // Section 5.6.2 Smooth-surface heights for the diffraction model
-    double *HH = (double *)malloc(sizeof(double) * input->n);
-    for (int i = 0; i < input->n; i++)
-        HH[i] = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
-
-    double hobs = 0;
-    for (int i = 1; i < input->n - 1; i++)
-        hobs = fmax(hobs, HH[i]);
-
+    double hobs = -INFINITY;
     double alpha_obt = -INFINITY;
-    for (int i = 1; i < input->n - 1; i++)
-        alpha_obt = fmax(alpha_obt, HH[i] / input->d[i]);
-
     double alpha_obr = -INFINITY;
     for (int i = 1; i < input->n - 1; i++)
-        alpha_obr = fmax(alpha_obr, HH[i] / (input->dtot - input->d[i]));
+    {
+        double HHi = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
+        hobs = fmax(hobs, HHi);
+        alpha_obt = fmax(alpha_obt, HHi / input->d[i]);
+        alpha_obr = fmax(alpha_obr, HHi / (input->dtot - input->d[i]));
+    }
 
     // Calculate provisional values for the Tx and Rx smooth surface heights
     double gt = alpha_obt / (alpha_obt + alpha_obr);
@@ -81,32 +66,29 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         output->hsrd = output->hsrp;
 
     // Interfering antenna horizon elevation angle and distance
-    double *theta = (double *)malloc(sizeof(double) * (input->n - 2));
+    double theta;
+    double theta_max = -INFINITY;
     for (int i = 1; i < input->n - 1; i++)
-        theta[i - 1] = 1000 * atan((input->h[i] - output->hts) / (1000 * input->d[i]) - input->d[i] / (2 * ER));
+    {
+        theta = 1000 * atan((input->h[i] - output->hts) / (1000 * input->d[i]) - input->d[i] / (2 * ER));
+        theta_max = fmax(theta_max, theta);
+    }
+
     double theta_td = 1000 * atan((output->hrs - output->hts) / (1000 * input->dtot) - input->dtot / (2 * ER));
     double theta_rd = 1000 * atan((output->hts - output->hrs) / (1000 * input->dtot) - input->dtot / (2 * ER));
-
-    double theta_max = -INFINITY;
-    for (int i = 0; i < input->n - 2; i++)
-        theta_max = fmax(theta_max, theta[i]);
-
-    int pathtype = (theta_max > theta_td) ? 2 : 1;
-
     double theta_t = fmax(theta_max, theta_td);
 
     int lt = 0;
     int lr = 0;
 
     double theta_r;
-    if (pathtype == 2)
-    { // transhorizon
+    if (theta_max > theta_td) // Transhorizon path
+    {
         theta_r = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double temp = (input->h[i] - output->hrs) / (1000 * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER);
-            theta[i - 1] = 1000 * atan(temp);
-            theta_r = fmax(theta_r, theta[i - 1]);
+            theta = 1000 * atan((input->h[i] - output->hrs) / (1000 * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER));
+            theta_r = fmax(theta_r, theta);
         }
 
         int kindex = 0;
@@ -127,23 +109,18 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         lr = lt;
     }
     else
-    { // pathtype == 1 (LoS)
+    { // Line-of-sight path
         theta_r = theta_rd;
-        double *nu = (double *)malloc(sizeof(double) * (input->n - 2));
-        for (int i = 1; i < input->n - 1; i++)
-        {
-            double temp = (input->h[i] + 500 * ER * input->d[i] * (input->dtot - input->d[i]) - (output->hts * (input->dtot - input->d[i]) + output->hrs * input->d[i]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
-            nu[i - 1] = temp;
-        }
 
         int kindex = 0;
         double numax = -INFINITY;
-        for (int i = 0; i < input->n - 2; i++)
+        for (int i = 1; i < input->n - 1; i++)
         {
-            if (nu[i] > numax)
+            double nu = (input->h[i] + 500 * ER * input->d[i] * (input->dtot - input->d[i]) - (output->hts * (input->dtot - input->d[i]) + output->hrs * input->d[i]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
+            if (nu > numax)
             {
-                numax = nu[i];
-                kindex = i;
+                numax = nu;
+                kindex = i - 1;
             }
         }
 
@@ -151,7 +128,6 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         output->dlt = input->d[lt - 1];
         output->dlr = input->dtot - output->dlt;
         lr = lt;
-        free(nu);
     }
 
     // Angular distance
@@ -175,7 +151,4 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     double hm = 0;
     for (int i = lt; i <= lr; i++)
         hm = fmax(hm, input->h[i] - (hst_smooth + m * input->d[i]));
-
-    free(HH);
-    free(theta);
 }

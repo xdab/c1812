@@ -1,4 +1,4 @@
-#include "calculation.h"
+#include "calculate.h"
 #include "rf.h"
 
 #include "constants.h"
@@ -12,7 +12,64 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void copy_ctx_to_seh_input(c1812_calculation_context_t *ctx, seh_input_t *input)
+typedef struct
+{
+	// Copied from parameters
+	double p;	// time percentage [%]
+	double f;	// frequency [GHz]
+	int n;		// number of points
+	double *d;	// path distances [km]
+	double *h;	// path heights [m]
+	double *Ct; // representative clutter heights [m]
+	double htg; // transmitter height above ground [m]
+	double hrg; // receiver height above ground [m]
+	double DN;
+
+	// Calculated in c1812_calculate
+	double lambda; // wavelength [m]
+	double dtot;   // total great-circle path distance [km]
+	double dtm;	   // longest continuous land section of the great-circle path [km]
+	double dlm;	   // longest continuous inland section of the great-circle path [km]
+	double b0;	   // beta0
+	double ae, ab;
+	double omega; // fraction of the path over sea
+
+	// Calculated in smooth_earth_heights
+	double hts; // transmitter height above mean sea level [m]
+	double hrs; // receiver height above mean sea level [m]
+	double htc;
+	double hrc;
+	double hst;
+	double hsr;
+	double hstp;
+	double hsrp;
+	double hstd;
+	double hsrd;
+	double hte;
+	double hre;
+	double theta;
+	double dlt;
+	double dlr;
+
+} c1812_calculate_ctx_t;
+
+void copy_parameters_to_ctx(c1812_parameters_t *parameters, c1812_calculate_ctx_t *ctx)
+{
+	ctx->p = parameters->p;
+	ctx->f = parameters->f;
+	ctx->lambda = 0.2998 / ctx->f;
+
+	ctx->htg = parameters->htg;
+	ctx->hrg = parameters->hrg;
+	ctx->DN = parameters->DN;
+
+	ctx->n = parameters->n;
+	ctx->d = parameters->d;
+	ctx->h = parameters->h;
+	ctx->Ct = parameters->Ct;
+}
+
+void copy_ctx_to_seh_input(c1812_calculate_ctx_t *ctx, seh_input_t *input)
 {
 	input->n = ctx->n;
 	input->d = ctx->d;
@@ -24,9 +81,8 @@ void copy_ctx_to_seh_input(c1812_calculation_context_t *ctx, seh_input_t *input)
 	input->hrg = ctx->hrg;
 }
 
-void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculation_context_t *ctx)
+void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculate_ctx_t *ctx)
 {
-	ctx->g = output->g;
 	ctx->htc = output->htc;
 	ctx->hrc = output->hrc;
 	ctx->hts = output->hts;
@@ -44,7 +100,7 @@ void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculation_context_t *c
 	ctx->dlr = output->dlr;
 }
 
-void copy_ctx_to_pl_los_input(c1812_calculation_context_t *ctx, pl_los_input_t *input)
+void copy_ctx_to_pl_los_input(c1812_calculate_ctx_t *ctx, pl_los_input_t *input)
 {
 	input->d = ctx->dtot;
 	input->hts = ctx->hts;
@@ -56,11 +112,12 @@ void copy_ctx_to_pl_los_input(c1812_calculation_context_t *ctx, pl_los_input_t *
 	input->dlr = ctx->dlr;
 }
 
-void copy_ctx_to_dl_p_input(c1812_calculation_context_t *ctx, dl_p_input_t *input)
+void copy_ctx_to_dl_p_input(c1812_calculate_ctx_t *ctx, dl_p_input_t *input)
 {
 	input->n = ctx->n;
 	input->d = ctx->d;
-	input->g = ctx->g;
+	input->h = ctx->h;
+	input->Ct = ctx->Ct;
 	input->hts = ctx->hts;
 	input->hrs = ctx->hrs;
 	input->hstd = ctx->hstd;
@@ -84,23 +141,12 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	c1812_parameters_error_t param_err = c1812_validate_parameters(parameters);
 	if (param_err != PARAM_ERR_NONE)
 	{
-		results->error = param_err;
+		results->error = RESULTS_ERR_PARAMETERS;
 		return;
 	}
 
-	c1812_calculation_context_t ctx;
-	ctx.p = parameters->p;
-	ctx.f = parameters->f;
-	ctx.lambda = 0.2998 / ctx.f;
-
-	ctx.htg = parameters->htg;
-	ctx.hrg = parameters->hrg;
-	ctx.DN = parameters->DN;
-
-	ctx.n = parameters->n;
-	ctx.d = parameters->d;
-	ctx.h = parameters->h;
-	ctx.Ct = parameters->Ct;
+	c1812_calculate_ctx_t ctx;
+	copy_parameters_to_ctx(parameters, &ctx);
 
 	// Compute dtot - the total great-circle path distance (km)
 	ctx.dtot = parameters->d[parameters->n - 1] - parameters->d[0];

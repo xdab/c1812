@@ -10,7 +10,8 @@ void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
     dl_bull_input_t dl_bull_input;
     dl_bull_input.n = input->n;
     dl_bull_input.d = input->d;
-    dl_bull_input.g = input->g;
+    dl_bull_input.h = input->h;
+    dl_bull_input.Ct = input->Ct;
     dl_bull_input.hts = input->hts;
     dl_bull_input.hrs = input->hrs;
     dl_bull_input.ap = input->ap;
@@ -33,7 +34,8 @@ void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
     // Set the resulting Bullington diffraction loss for this smooth path to Lbulls
     double hts1 = input->hts - input->hstd;
     double hrs1 = input->hrs - input->hsrd;
-    dl_bull_input.g = NULL;
+    dl_bull_input.h = NULL;
+    dl_bull_input.Ct = NULL;
     dl_bull_input.hts = hts1;
     dl_bull_input.hrs = hrs1;
     dl_bull(&dl_bull_input, &dl_bull_output);
@@ -43,8 +45,6 @@ void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
     // for the actual path length (dtot) with
     // hte = hts1;             % eq (38a)
     // hre = hrs1;             % eq (38b)
-    double hte = hts1;
-    double hre = hrs1;
     dl_se_output_t dl_se_output;
     dl_se_input_t dl_se_input;
     dl_se_input.d = input->dtot;

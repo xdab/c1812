@@ -5,7 +5,8 @@ typedef struct
 {
     int n;
     double *d;
-    double *g;
+    double *h;
+    double *Ct;
     double hts;
     double hrs;
     double hstd;
@@ -25,13 +26,14 @@ typedef struct
     double Ldsph[2];
 } dl_delta_bull_output_t;
 
-/*
+/**
  * This function computes the complete 'delta-Bullington' diffraction loss
  * as defined in ITU-R P.1812-4 (Section 4.3.4)
  *
  * @param input->n number of terrain profile points
  * @param input->d distance of terrain profile points in km
- * @param input->g terrain profile in meters above sea level
+ * @param input->h terrain profile in meters above sea level
+ * @param input->Ct clutter height above terrain
  * @param input->hts transmitter antenna height in meters above sea level (i=0)
  * @param input->hrs receiver antenna height in meters above sea level (i=n)
  * @param input->hstd Effective height of interfering antenna (m amsl) c.f.

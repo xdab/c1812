@@ -15,7 +15,6 @@ typedef struct
 
 typedef struct
 {
-    double *g;  // path heights with representative clutter [m]
     double hts; // transmitter height above mean sea level [m]
     double hrs; // receiver height above mean sea level [m]
     double htc;

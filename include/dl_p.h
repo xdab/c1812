@@ -40,7 +40,8 @@ typedef struct
 {
     int n;
     double *d;
-    double *g;
+    double *h;
+    double *Ct;
     double hts;
     double hrs;
     double hstd;

@@ -3,6 +3,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#define h(input, i) ((input->h != NULL) ? input->h[i] : 0.0)
+#define Ct(input, i) ((input->Ct != NULL) ? input->Ct[i] : 0.0)
+#define g(input, i) (h(input, i) + Ct(input, i))
+
 void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
 {
     // Effective Earth curvature Ce (km^-1)
@@ -13,8 +17,7 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
     double Stim = -INFINITY;
     for (int i = 1; i < input->n - 1; i++)
     {
-        double g = (input->g != NULL) ? input->g[i] : 0.0;
-        double temp = g;
+        double temp = g(input, i);
         temp += 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
         temp -= input->hts;
         temp /= input->d[i];
@@ -37,8 +40,7 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double g = (input->g != NULL) ? input->g[i] : 0.0;
-            double temp = g + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
+            double temp = g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
             temp -= (input->hts * (input->dtot - input->d[i]) + input->hrs * input->d[i]) / input->dtot;
             temp *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
             if (temp > numax)
@@ -55,8 +57,7 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         double Srim = -INFINITY;
         for (int i = 1; i < input->n - 2; i++)
         {
-            double g = (input->g != NULL) ? input->g[i] : 0.0;
-            double temp = (g + 500 * Ce * input->d[i] * (input->dtot - input->d[i]) - input->hrs) / (input->dtot - input->d[i]);
+            double temp = (g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]) - input->hrs) / (input->dtot - input->d[i]);
             if (temp > Srim)
                 Srim = temp;
         }

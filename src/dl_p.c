@@ -8,7 +8,8 @@ void dl_p(dl_p_input_t *input, dl_p_output_t *output)
     dl_delta_bull_input_t dl_delta_bull_input;
     dl_delta_bull_input.n = input->n;
     dl_delta_bull_input.d = input->d;
-    dl_delta_bull_input.g = input->g;
+    dl_delta_bull_input.h = input->h;
+    dl_delta_bull_input.Ct = input->Ct;
     dl_delta_bull_input.hts = input->hts;
     dl_delta_bull_input.hrs = input->hrs;
     dl_delta_bull_input.hstd = input->hstd;

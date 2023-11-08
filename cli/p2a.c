@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "outfile.h"
-#include "c1812/calculation.h"
+#include "c1812/calculate.h"
 
 #define KM 1000.0
 
