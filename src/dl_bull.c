@@ -40,11 +40,11 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double temp = g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
-            temp -= (input->hts * (input->dtot - input->d[i]) + input->hrs * input->d[i]) / input->dtot;
-            temp *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
-            if (temp > numax)
-                numax = temp;
+            double nu = g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
+            nu -= (input->hts * (input->dtot - input->d[i]) + input->hrs * input->d[i]) / input->dtot;
+            nu *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
+            if (nu > numax)
+                numax = nu;
         }
 
         if (numax > -0.78)

@@ -252,87 +252,12 @@ int malloc_caches(c1812_parameters_t *parameters, int n)
         return EXIT_FAILURE;
     }
 
-    parameters->hobs_cache = malloc(n * sizeof(double));
-    if (parameters->hobs_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->hobs_cache\n");
-        return EXIT_FAILURE;
-    }
-
-    parameters->alpha_obt_cache = malloc(n * sizeof(double));
-    if (parameters->alpha_obt_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->alpha_obt_cache\n");
-        return EXIT_FAILURE;
-    }
-
-    parameters->alpha_obr_cache = malloc(n * sizeof(double));
-    if (parameters->alpha_obr_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        free(parameters->alpha_obt_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->alpha_obr_cache\n");
-        return EXIT_FAILURE;
-    }
-
     parameters->theta_max_cache = malloc(n * sizeof(double));
     if (parameters->theta_max_cache == NULL)
     {
         free(parameters->v1_cache);
         free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        free(parameters->alpha_obt_cache);
-        free(parameters->alpha_obr_cache);
         fprintf(stderr, "malloc_caches: malloc() parameters->theta_max_cache\n");
-        return EXIT_FAILURE;
-    }
-
-    parameters->theta_r_cache = malloc(n * sizeof(double));
-    if (parameters->theta_r_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        free(parameters->alpha_obt_cache);
-        free(parameters->alpha_obr_cache);
-        free(parameters->theta_max_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->theta_r_cache\n");
-        return EXIT_FAILURE;
-    }
-
-    parameters->kindex_cache = malloc(n * sizeof(double));
-    if (parameters->kindex_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        free(parameters->alpha_obt_cache);
-        free(parameters->alpha_obr_cache);
-        free(parameters->theta_max_cache);
-        free(parameters->theta_r_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->kindex_cache\n");
-        return EXIT_FAILURE;
-    }
-
-    parameters->numax_cache = malloc(n * sizeof(double));
-    if (parameters->numax_cache == NULL)
-    {
-        free(parameters->v1_cache);
-        free(parameters->v2_cache);
-        free(parameters->hobs_cache);
-        free(parameters->alpha_obt_cache);
-        free(parameters->alpha_obr_cache);
-        free(parameters->theta_max_cache);
-        free(parameters->theta_r_cache);
-        free(parameters->kindex_cache);
-        fprintf(stderr, "malloc_caches: malloc() parameters->numax_cache\n");
         return EXIT_FAILURE;
     }
 
@@ -345,13 +270,7 @@ void clear_caches(c1812_parameters_t *parameters, int n)
     {
         parameters->v1_cache[i] = NAN;
         parameters->v2_cache[i] = NAN;
-        parameters->hobs_cache[i] = NAN;
-        parameters->alpha_obt_cache[i] = NAN;
-        parameters->alpha_obr_cache[i] = NAN;
         parameters->theta_max_cache[i] = NAN;
-        parameters->theta_r_cache[i] = NAN;
-        parameters->kindex_cache[i] = NAN;
-        parameters->numax_cache[i] = NAN;
     }
 }
 
@@ -359,11 +278,5 @@ void free_caches(c1812_parameters_t *parameters)
 {
     free(parameters->v1_cache);
     free(parameters->v2_cache);
-    free(parameters->hobs_cache);
-    free(parameters->alpha_obt_cache);
-    free(parameters->alpha_obr_cache);
     free(parameters->theta_max_cache);
-    free(parameters->theta_r_cache);
-    free(parameters->kindex_cache);
-    free(parameters->numax_cache);
 }

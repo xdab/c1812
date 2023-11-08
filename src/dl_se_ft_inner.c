@@ -47,13 +47,9 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
     for (int ii = 0; ii < 2; ii++)
     {
         if (X[ii] >= 1.6)
-        {
             Fx[ii] = 11 + 10 * log10(X[ii]) - 17.6 * X[ii];
-        }
         else
-        {
             Fx[ii] = -20 * log10(X[ii]) - 5.6488 * pow2(X[ii], 1.425); // Eq (33)
-        }
     }
 
     double Bt[2];
@@ -64,32 +60,17 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
         Br[ii] = beta_dft[ii] * Yr[ii]; // Eq (35)
 
         if (Bt[ii] > 2)
-        {
             GYt[ii] = 17.6 * sqrt(Bt[ii] - 1.1) - 5 * log10(Bt[ii] - 1.1) - 8;
-        }
         else
-        {
             GYt[ii] = 20 * log10(Bt[ii] + 0.1 * pow2(Bt[ii], 3));
-        }
 
         if (Br[ii] > 2)
-        {
             GYr[ii] = 17.6 * sqrt(Br[ii] - 1.1) - 5 * log10(Br[ii] - 1.1) - 8;
-        }
         else
-        {
             GYr[ii] = 20 * log10(Br[ii] + 0.1 * pow2(Br[ii], 3));
-        }
 
-        if (GYr[ii] < 2 + 20 * log10(K[ii]))
-        {
-            GYr[ii] = 2 + 20 * log10(K[ii]);
-        }
-
-        if (GYt[ii] < 2 + 20 * log10(K[ii]))
-        {
-            GYt[ii] = 2 + 20 * log10(K[ii]);
-        }
+        GYr[ii] = fmax(GYr[ii], 2 + 20 * log10(K[ii]));
+        GYt[ii] = fmax(GYt[ii], 2 + 20 * log10(K[ii]));
     }
 
     // Eq (36)

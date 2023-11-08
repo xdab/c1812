@@ -47,34 +47,9 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     output->hsr_n = output->hsr;
 
     // Section 5.6.2 Smooth-surface heights for the diffraction model
-    // TODO hobs, alpha_obt, alpha_obr caches
     double hobs = -INFINITY;
     double alpha_obt = -INFINITY;
     double alpha_obr = -INFINITY;
-    // bool use_hobs_alpha_obt_alpha_obr_caches = (input->hobs_cache != NULL) && (input->alpha_obt_cache != NULL) && (input->alpha_obr_cache != NULL);
-    // if (use_hobs_alpha_obt_alpha_obr_caches && !isnan(input->hobs_cache[input->n]) && !isnan(input->alpha_obt_cache[input->n]) && !isnan(input->alpha_obr_cache[input->n]))
-    // {
-    //     hobs = input->hobs_cache[input->n];
-    //     alpha_obt = input->alpha_obt_cache[input->n];
-    //     alpha_obr = input->alpha_obr_cache[input->n];
-    // }
-    // else
-    // {
-    //     for (int i = 1; i < input->n - 1; i++)
-    //     {
-    //         double HHi = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
-    //         hobs = fmax(hobs, HHi);
-    //         alpha_obt = fmax(alpha_obt, HHi / input->d[i]);
-    //         alpha_obr = fmax(alpha_obr, HHi / (input->dtot - input->d[i]));
-    //         if (use_hobs_alpha_obt_alpha_obr_caches)
-    //         {
-    //             input->hobs_cache[i] = hobs;
-    //             input->alpha_obt_cache[i] = alpha_obt;
-    //             input->alpha_obr_cache[i] = alpha_obr;
-    //         }
-    //     }
-    // }
-
     for (int i = 1; i < input->n - 1; i++)
     {
         double HHi = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
@@ -111,56 +86,52 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 
     // Interfering antenna horizon elevation angle and distance
     double theta;
-    // TODO theta_max cache
     double theta_max = -INFINITY;
-    for (int i = 1; i < input->n - 1; i++)
+    bool use_theta_max_cache = (input->theta_max_cache != NULL);
+    if (use_theta_max_cache && !isnan(input->theta_max_cache[input->n]))
     {
-        theta = KM * atan((input->h[i] - output->hts) / (KM * input->d[i]) - input->d[i] / (2 * ER));
-        theta_max = fmax(theta_max, theta);
+        theta_max = input->theta_max_cache[input->n];
+    }
+    else
+    {
+        for (int i = 1; i < input->n - 1; i++)
+        {
+            theta = KM * atan((input->h[i] - output->hts) / (KM * input->d[i]) - input->d[i] / (2 * ER));
+            theta_max = fmax(theta_max, theta);
+            if (use_theta_max_cache)
+            {
+                input->theta_max_cache[i + 2] = theta_max;
+            }
+        }
     }
 
     double theta_td = KM * atan((output->hrs - output->hts) / (KM * input->dtot) - input->dtot / (2 * ER));
     double theta_rd = KM * atan((output->hts - output->hrs) / (KM * input->dtot) - input->dtot / (2 * ER));
     double theta_t = fmax(theta_max, theta_td);
 
-    int lt = 0;
-    int lr = 0;
-
     double theta_r;
     if (theta_max > theta_td) // Transhorizon path
     {
-        // TODO theta_r cache
         theta_r = -INFINITY;
+
+        double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
             theta = KM * atan((input->h[i] - output->hrs) / (KM * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER));
             theta_r = fmax(theta_r, theta);
-        }
 
-        // TODO kindex, numax caches
-        int kindex = 0;
-        double numax = -INFINITY;
-        for (int i = 0; i < input->n - 2; i++)
-        {
-            double temp = (input->h[i + 1] + 500 * ER * (input->d[i + 1] * (input->dtot - input->d[i + 1]) - input->d[i] * (input->dtot - input->d[i])) - (output->hts * (input->dtot - input->d[i]) + output->hrs * input->d[i]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
-            if (temp > numax)
+            double nu = (input->h[i] + 500 * ER * (input->d[i] * (input->dtot - input->d[i]) - input->d[i - 1] * (input->dtot - input->d[i - 1])) - (output->hts * (input->dtot - input->d[i - 1]) + output->hrs * input->d[i - 1]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i - 1] * (input->dtot - input->d[i - 1])));
+            if (nu > numax)
             {
-                numax = temp;
-                kindex = i;
+                numax = nu;
+                output->dlt = input->d[i + 1];
             }
         }
-
-        lt = kindex + 1;
-        output->dlt = input->d[lt];
-        output->dlr = input->dtot - output->dlt;
-        lr = lt;
     }
     else
     { // Line-of-sight path
         theta_r = theta_rd;
 
-        // TODO kindex, numax caches
-        int kindex = 0;
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
@@ -168,15 +139,12 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
             if (nu > numax)
             {
                 numax = nu;
-                kindex = i - 1;
+                output->dlt = input->d[i];
             }
         }
-
-        lt = kindex + 2;
-        output->dlt = input->d[lt - 1];
-        output->dlr = input->dtot - output->dlt;
-        lr = lt;
     }
+
+    output->dlr = input->dtot - output->dlt;
 
     // Angular distance
     double theta_tot = KM * input->dtot / ER + theta_t + theta_r;
