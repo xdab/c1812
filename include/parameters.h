@@ -35,6 +35,17 @@ typedef struct
 	double *h;	// terrain height above sea level [m]
 	double *Ct; // representative clutter height [m]
 
+	// Optional caches
+	double *v1_cache;
+    double *v2_cache;
+	double *hobs_cache;
+    double *alpha_obt_cache;
+    double *alpha_obr_cache;
+	double *theta_max_cache;
+	double *theta_r_cache;
+	double *kindex_cache;
+	double *numax_cache;
+
 } c1812_parameters_t;
 
 #endif

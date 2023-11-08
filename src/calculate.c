@@ -51,6 +51,17 @@ typedef struct
 	double dlt;
 	double dlr;
 
+	// Optional caches
+	double *v1_cache;
+    double *v2_cache;
+	double *hobs_cache;
+    double *alpha_obt_cache;
+    double *alpha_obr_cache;
+	double *theta_max_cache;
+	double *theta_r_cache;
+	double *kindex_cache;
+	double *numax_cache;
+
 } c1812_calculate_ctx_t;
 
 void copy_parameters_to_ctx(c1812_parameters_t *parameters, c1812_calculate_ctx_t *ctx)
@@ -67,6 +78,16 @@ void copy_parameters_to_ctx(c1812_parameters_t *parameters, c1812_calculate_ctx_
 	ctx->d = parameters->d;
 	ctx->h = parameters->h;
 	ctx->Ct = parameters->Ct;
+
+	ctx->v1_cache = parameters->v1_cache;
+	ctx->v2_cache = parameters->v2_cache;
+	ctx->hobs_cache = parameters->hobs_cache;
+	ctx->alpha_obt_cache = parameters->alpha_obt_cache;
+	ctx->alpha_obr_cache = parameters->alpha_obr_cache;
+	ctx->theta_max_cache = parameters->theta_max_cache;
+	ctx->theta_r_cache = parameters->theta_r_cache;
+	ctx->kindex_cache = parameters->kindex_cache;
+	ctx->numax_cache = parameters->numax_cache;
 }
 
 void copy_ctx_to_seh_input(c1812_calculate_ctx_t *ctx, seh_input_t *input)
@@ -79,6 +100,16 @@ void copy_ctx_to_seh_input(c1812_calculate_ctx_t *ctx, seh_input_t *input)
 	input->lambda = ctx->lambda;
 	input->htg = ctx->htg;
 	input->hrg = ctx->hrg;
+
+	input->v1_cache = ctx->v1_cache;
+	input->v2_cache = ctx->v2_cache;
+	input->hobs_cache = ctx->hobs_cache;
+	input->alpha_obt_cache = ctx->alpha_obt_cache;
+	input->alpha_obr_cache = ctx->alpha_obr_cache;
+	input->theta_max_cache = ctx->theta_max_cache;
+	input->theta_r_cache = ctx->theta_r_cache;
+	input->kindex_cache = ctx->kindex_cache;
+	input->numax_cache = ctx->numax_cache;
 }
 
 void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculate_ctx_t *ctx)

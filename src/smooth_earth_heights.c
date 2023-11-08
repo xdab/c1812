@@ -2,6 +2,11 @@
 #include "constants.h"
 #include "pow.h"
 #include <math.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+#define KM 1000.0
 
 void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 {
@@ -14,11 +19,25 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 
     double v1 = 0.0;
     double v2 = 0.0;
-    for (int i = 1; i < input->n; i++)
+    bool use_v1_v2_caches = (input->v1_cache != NULL) && (input->v2_cache != NULL);
+    if (use_v1_v2_caches && !isnan(input->v1_cache[input->n]) && !isnan(input->v2_cache[input->n]))
     {
-        double diff_d = input->d[i] - input->d[i - 1];
-        v1 += diff_d * (input->h[i] + input->h[i - 1]);
-        v2 += diff_d * (input->h[i] * (2 * input->d[i] + input->d[i - 1]) + input->h[i - 1] * (input->d[i] + 2 * input->d[i - 1]));
+        v1 = input->v1_cache[input->n];
+        v2 = input->v2_cache[input->n];
+    }
+    else
+    {
+        for (int i = 1; i < input->n; i++)
+        {
+            double diff_d = input->d[i] - input->d[i - 1];
+            v1 += diff_d * (input->h[i] + input->h[i - 1]);
+            v2 += diff_d * (input->h[i] * (2 * input->d[i] + input->d[i - 1]) + input->h[i - 1] * (input->d[i] + 2 * input->d[i - 1]));
+            if (use_v1_v2_caches)
+            {
+                input->v1_cache[i] = v1;
+                input->v2_cache[i] = v2;
+            }
+        }
     }
 
     output->hst = (2 * v1 * input->dtot - v2) / pow2(input->dtot, 2);
@@ -28,9 +47,34 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     output->hsr_n = output->hsr;
 
     // Section 5.6.2 Smooth-surface heights for the diffraction model
+    // TODO hobs, alpha_obt, alpha_obr caches
     double hobs = -INFINITY;
     double alpha_obt = -INFINITY;
     double alpha_obr = -INFINITY;
+    // bool use_hobs_alpha_obt_alpha_obr_caches = (input->hobs_cache != NULL) && (input->alpha_obt_cache != NULL) && (input->alpha_obr_cache != NULL);
+    // if (use_hobs_alpha_obt_alpha_obr_caches && !isnan(input->hobs_cache[input->n]) && !isnan(input->alpha_obt_cache[input->n]) && !isnan(input->alpha_obr_cache[input->n]))
+    // {
+    //     hobs = input->hobs_cache[input->n];
+    //     alpha_obt = input->alpha_obt_cache[input->n];
+    //     alpha_obr = input->alpha_obr_cache[input->n];
+    // }
+    // else
+    // {
+    //     for (int i = 1; i < input->n - 1; i++)
+    //     {
+    //         double HHi = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
+    //         hobs = fmax(hobs, HHi);
+    //         alpha_obt = fmax(alpha_obt, HHi / input->d[i]);
+    //         alpha_obr = fmax(alpha_obr, HHi / (input->dtot - input->d[i]));
+    //         if (use_hobs_alpha_obt_alpha_obr_caches)
+    //         {
+    //             input->hobs_cache[i] = hobs;
+    //             input->alpha_obt_cache[i] = alpha_obt;
+    //             input->alpha_obr_cache[i] = alpha_obr;
+    //         }
+    //     }
+    // }
+
     for (int i = 1; i < input->n - 1; i++)
     {
         double HHi = input->h[i] - (output->htc * (input->dtot - input->d[i]) + output->hrc * input->d[i]) / input->dtot;
@@ -67,15 +111,16 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 
     // Interfering antenna horizon elevation angle and distance
     double theta;
+    // TODO theta_max cache
     double theta_max = -INFINITY;
     for (int i = 1; i < input->n - 1; i++)
     {
-        theta = 1000 * atan((input->h[i] - output->hts) / (1000 * input->d[i]) - input->d[i] / (2 * ER));
+        theta = KM * atan((input->h[i] - output->hts) / (KM * input->d[i]) - input->d[i] / (2 * ER));
         theta_max = fmax(theta_max, theta);
     }
 
-    double theta_td = 1000 * atan((output->hrs - output->hts) / (1000 * input->dtot) - input->dtot / (2 * ER));
-    double theta_rd = 1000 * atan((output->hts - output->hrs) / (1000 * input->dtot) - input->dtot / (2 * ER));
+    double theta_td = KM * atan((output->hrs - output->hts) / (KM * input->dtot) - input->dtot / (2 * ER));
+    double theta_rd = KM * atan((output->hts - output->hrs) / (KM * input->dtot) - input->dtot / (2 * ER));
     double theta_t = fmax(theta_max, theta_td);
 
     int lt = 0;
@@ -84,13 +129,15 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     double theta_r;
     if (theta_max > theta_td) // Transhorizon path
     {
+        // TODO theta_r cache
         theta_r = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            theta = 1000 * atan((input->h[i] - output->hrs) / (1000 * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER));
+            theta = KM * atan((input->h[i] - output->hrs) / (KM * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER));
             theta_r = fmax(theta_r, theta);
         }
 
+        // TODO kindex, numax caches
         int kindex = 0;
         double numax = -INFINITY;
         for (int i = 0; i < input->n - 2; i++)
@@ -112,6 +159,7 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     { // Line-of-sight path
         theta_r = theta_rd;
 
+        // TODO kindex, numax caches
         int kindex = 0;
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
@@ -131,7 +179,7 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     }
 
     // Angular distance
-    double theta_tot = 1e3 * input->dtot / ER + theta_t + theta_r;
+    double theta_tot = KM * input->dtot / ER + theta_t + theta_r;
     output->theta = theta_tot;
 
     // Section 5.6.3 Ducting/layer-reflection model
@@ -141,14 +189,7 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     double hst_smooth = fmin(output->hst, input->h[0]);
     double hsr_smooth = fmin(output->hsr, input->h[input->n - 1]);
 
-    // Slope of the smooth-Earth surface
-    double m = (hsr_smooth - hst_smooth) / input->dtot;
-
     // The terminal effective heigts for the ducting/layer-reflection model
     output->hte = input->htg + input->h[0] - hst_smooth;
     output->hre = input->hrg + input->h[input->n - 1] - hsr_smooth;
-
-    double hm = 0;
-    for (int i = lt; i <= lr; i++)
-        hm = fmax(hm, input->h[i] - (hst_smooth + m * input->d[i]));
 }
