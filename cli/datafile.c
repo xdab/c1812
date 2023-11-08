@@ -390,40 +390,48 @@ double datafile_get_nn(datafile_t *datafile, const double x, const double y)
 
 double datafile_get_bilinear(datafile_t *datafile, const double x, const double y)
 {
-    // Find adjacent x1 and x2 such that x1 <= x and x < x2
-    int x1_index, x2_index;
-    double x1, x2;
-    for (int i = 0; i < datafile->x_size - 1; i++)
+    int x1_index;
+    double x1 = nneighbor(datafile->x, datafile->x_size, x, &x1_index);
+    if (x1 > x)
     {
-        x1_index = i;
-        x2_index = i + 1;
+        x1_index--;
+        if (x1_index < 0)
+            return NAN;
         x1 = datafile->x[x1_index];
-        x2 = datafile->x[x2_index];
-        if (x1 <= x && x < x2)
-            break;
     }
 
-    // Find adjacent y1 and y2 such that y1 <= y and y < y2
-    int y1_index, y2_index;
-    double y1, y2;
-    for (int i = 0; i < datafile->y_size - 1; i++)
+    int x2_index = x1_index + 1;
+    if (x2_index >= datafile->x_size)
+        return NAN;
+    double x2 = datafile->x[x2_index];
+
+    int y1_index;
+    double y1 = nneighbor(datafile->y, datafile->y_size, y, &y1_index);
+    if (y1 > y)
     {
-        y1_index = i;
-        y2_index = i + 1;
+        y1_index--;
+        if (y1_index < 0)
+            return NAN;
         y1 = datafile->y[y1_index];
-        y2 = datafile->y[y2_index];
-        if (y1 <= y && y < y2)
-            break;
     }
 
-    // Find the four heights at the corners of the rectangle
+    int y2_index = y1_index + 1;
+    if (y2_index >= datafile->y_size)
+        return NAN;
+    double y2 = datafile->y[y2_index];
+
+    // Find the heights at the corners of the rectangle
     double h11 = datafile->h[y1_index][x1_index];
     double h12 = datafile->h[y1_index][x2_index];
     double h21 = datafile->h[y2_index][x1_index];
     double h22 = datafile->h[y2_index][x2_index];
 
-    // Find the bilinearly interpolated height
-    double h = (h11 * (x2 - x) * (y2 - y) + h21 * (x - x1) * (y2 - y) + h12 * (x2 - x) * (y - y1) + h22 * (x - x1) * (y - y1)) / ((x2 - x1) * (y2 - y1));
+    // Find the heights at the edges of the rectangle
+    double h1 = h11 + (h12 - h11) * (x - x1) / (x2 - x1);
+    double h2 = h21 + (h22 - h21) * (x - x1) / (x2 - x1);
+
+    // Find the height at the point
+    double h = h1 + (h2 - h1) * (y - y1) / (y2 - y1);
 
     return h;
 }
