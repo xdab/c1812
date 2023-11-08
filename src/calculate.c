@@ -7,6 +7,7 @@
 #include "pl_los.h"
 #include "dl_p.h"
 #include "inv_cum_norm.h"
+#include "tl_anomalous.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -50,10 +51,15 @@ typedef struct
 	double theta;
 	double dlt;
 	double dlr;
+	double dct;
+	double dcr;
+	double hm;
+	double theta_t;
+	double theta_r;
 
 	// Optional caches
 	double *v1_cache;
-    double *v2_cache;
+	double *v2_cache;
 	double *theta_max_cache;
 	double *theta_r_cache;
 	double *kindex_cache;
@@ -112,8 +118,11 @@ void copy_seh_output_to_ctx(seh_output_t *output, c1812_calculate_ctx_t *ctx)
 	ctx->hte = output->hte;
 	ctx->hre = output->hre;
 	ctx->theta = output->theta;
+	ctx->theta_t = output->theta_t;
+	ctx->theta_r = output->theta_r;
 	ctx->dlt = output->dlt;
 	ctx->dlr = output->dlr;
+	ctx->hm = output->hm;
 }
 
 void copy_ctx_to_pl_los_input(c1812_calculate_ctx_t *ctx, pl_los_input_t *input)
@@ -149,6 +158,28 @@ void copy_ctx_to_dl_p_input(c1812_calculate_ctx_t *ctx, dl_p_input_t *input)
 	input->DN = ctx->DN;
 }
 
+void copy_ctx_to_tl_anomalous_input(c1812_calculate_ctx_t *ctx, tl_anomalous_input_t *input)
+{
+	input->dtot = ctx->dtot;
+	input->dlt = ctx->dlt;
+	input->dlr = ctx->dlr;
+	input->dct = ctx->dct;
+	input->dcr = ctx->dcr;
+	input->dlm = ctx->dlm;
+	input->hts = ctx->hts;
+	input->hrs = ctx->hrs;
+	input->hte = ctx->hte;
+	input->hre = ctx->hre;
+	input->hm = ctx->hm;
+	input->theta_t = ctx->theta_t;
+	input->theta_r = ctx->theta_r;
+	input->f = ctx->f;
+	input->p = ctx->p;
+	input->omega = ctx->omega;
+	input->ae = ctx->ae;
+	input->b0 = ctx->b0;
+}
+
 void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 {
 	results->error = RESULTS_ERR_UNKNOWN;
@@ -172,6 +203,9 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 
 	// Compute dlm - the longest continuous inland section (4) of the great-circle path (km)
 	ctx.dlm = (parameters->zone == RC_ZONE_INLAND) ? ctx.dtot : 0.0;
+
+	// TODO distance to sea [km]
+	ctx.dct = ctx.dcr = 500.0;
 
 	// Compute b0
 	ctx.b0 = beta0(parameters->lat, ctx.dtm, ctx.dlm);
@@ -203,34 +237,76 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	dl_p(&dl_p_input, &dl_p_output);
 
 	// The median basic transmission loss associated with diffraction Eq (42)
-	double Lbd50[2];
-	Lbd50[0] = pl_los_output.Lbfs + dl_p_output.Ld50[0];
-	Lbd50[1] = pl_los_output.Lbfs + dl_p_output.Ld50[1];
+	double Lbd50 = pl_los_output.Lbfs + dl_p_output.Ld50[parameters->pol];
 
 	// The basic tranmission loss associated with diffraction not exceeded for
 	// p% time Eq (43)
-	double Lbd[2];
-	Lbd[0] = pl_los_output.Lb0p + dl_p_output.Ldp[0];
-	Lbd[1] = pl_los_output.Lb0p + dl_p_output.Ldp[1];
+	double Lbd = pl_los_output.Lb0p + dl_p_output.Ldp[parameters->pol];
 
-#ifdef EXTRA
 	// A notional minimum basic transmission loss associated with LoS
 	// propagation and over-sea sub-path diffraction
-	double Lminb0p[2];
-	Lminb0p[0] = pl_los_output.Lb0p + (1 - ctx.omega) * dl_p_output.Ldp[0];
-	Lminb0p[1] = pl_los_output.Lb0p + (1 - ctx.omega) * dl_p_output.Ldp[1];
+	double Lminb0p = pl_los_output.Lb0p + (1 - ctx.omega) * dl_p_output.Ldp[parameters->pol];
 
 	// eq (40a)
 	double Fi = 1;
 	if (ctx.p >= ctx.b0)
 	{
 		Fi = inv_cum_norm(ctx.p / 100) / inv_cum_norm(ctx.b0 / 100);
-		// eq(59)
-		Lminb0p[0] = Lbd50[0] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[0] - Lbd50[0]) * Fi;
-		Lminb0p[1] = Lbd50[1] + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[1] - Lbd50[1]) * Fi;
+		Lminb0p = Lbd50 + (pl_los_output.Lb0b + (1 - ctx.omega) * dl_p_output.Ldp[0] - Lbd50) * Fi; // eq (59)
 	}
+
+	// Calculate an interpolation factor Fj to take account of the path angular
+	// distance Eq (57)
+	const double THETA = 0.3;
+	const double KSI = 0.8;
+	double Fj = 1.0 - 0.5 * (1.0 + tanh(3.0 * KSI * (ctx.theta - THETA) / THETA));
+
+	// Calculate an interpolation factor, Fk, to take account of the great
+	// circle path distance:
+	const double dsw = 20;
+	const double kappa = 0.5;
+	double Fk = 1.0 - 0.5 * (1.0 + tanh(3.0 * kappa * (ctx.dtot - dsw) / dsw)); // eq (58)
+
+	// Calculate the transmission loss due to anomalous propagation
+	tl_anomalous_output_t tl_anomalous_output;
+	tl_anomalous_input_t tl_anomalous_input;
+	copy_ctx_to_tl_anomalous_input(&ctx, &tl_anomalous_input);
+
+	tl_anomalous(&tl_anomalous_input, &tl_anomalous_output);
+	double Lba = tl_anomalous_output.Lba;
+
+	const double eta = 2.5;
+	double Lminbap = eta * log(exp(Lba / eta) + exp(pl_los_output.Lb0p / eta)); // eq (60)
+	double Lbda = Lbd;
+	if (Lminbap <= Lbd)
+		Lbda = Lminbap + (Lbd - Lminbap) * Fk;
+
+	double Lbam = Lbda + (Lminb0p - Lbda) * Fj; // eq (62)
+
+#ifdef EXTRA
+	double Lbs = tl_tropo(ctx.dtot, ctx.theta, ctx.f, ctx.p, parameters->N0);
+
+	double Lbc_pol[2];
+	Lbc_pol[0] = -5 * log10(pow(10, -0.2 * Lbs) + pow(10, -0.2 * Lbam[0]));
+	Lbc_pol[1] = -5 * log10(pow(10, -0.2 * Lbs) + pow(10, -0.2 * Lbam[1])); // eq (63)
+
+	double Lbc = Lbc_pol[parameters->pol];
+
+	// Location variability of losses (Section 4.8)
+	double Lloc = 0.0; // outdoors only (67a)
+	if (parameters->zone != RC_ZONE_SEA)
+	{
+		double pL = 50;		 // 50% of locations
+		double sigmaL = 5.5; // dB
+		Lloc = -inv_cum_norm(pL / 100.0) * sigmaL;
+	}
+
+	// Basic transmission loss not exceeded for p% time and pL% locations
+	// (Sections 4.8 and 4.9) not implemented
+	results->Lb = fmax(pl_los_output.Lb0p, Lbc + Lloc); // eq (69)
+	results->error = RESULTS_ERR_NONE;
 #endif
 
-	results->Lb = fmax(pl_los_output.Lb0p, Lbd[(int)parameters->pol]);
+	results->Lb = fmax(pl_los_output.Lb0p, Lbd); // eq (69)
 	results->error = RESULTS_ERR_NONE;
 }

@@ -35,8 +35,11 @@ typedef struct
     double hte;
     double hre;
     double theta;
+    double theta_t;
+    double theta_r;
     double dlt;
     double dlr;
+    double hm;
 } seh_output_t;
 
 void smooth_earth_heights(seh_input_t *input, seh_output_t *output);

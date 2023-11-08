@@ -149,6 +149,8 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     // Angular distance
     double theta_tot = KM * input->dtot / ER + theta_t + theta_r;
     output->theta = theta_tot;
+    output->theta_t = theta_t;
+    output->theta_r = theta_r;
 
     // Section 5.6.3 Ducting/layer-reflection model
 
@@ -160,4 +162,7 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     // The terminal effective heigts for the ducting/layer-reflection model
     output->hte = input->htg + input->h[0] - hst_smooth;
     output->hre = input->hrg + input->h[input->n - 1] - hsr_smooth;
+
+    // TODO
+    output->hm = 0;
 }
