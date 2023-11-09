@@ -52,7 +52,7 @@ if __name__ == '__main__':
     y = np.concatenate(y)
     z = np.concatenate(z)
 
-    ngridx = ngridy = 512
+    ngridx = ngridy = 400
     xi = np.linspace(np.min(x), np.max(x), ngridx)
     yi = np.linspace(np.min(y), np.max(y), ngridy)
 
@@ -62,7 +62,6 @@ if __name__ == '__main__':
     zi = interpolator(Xi, Yi)
 
     tx_power_watts = 20
-
     tx_power_dbm = 10 * np.log10(tx_power_watts * 1000)
     tx_gain = -4
     rx_gain = -4
@@ -72,9 +71,12 @@ if __name__ == '__main__':
 
     zi = tx_power_dbm - zi + tx_gain + rx_gain
     zi = (zi - s1_dbm) / s_dbm
-    levels = np.linspace(1, 9, num=9)
-    plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap=plt.cm.jet)
-    # plt.contourf(xi, yi, zi, levels=levels, vmin=1, vmax=9, cmap=plt.cm.jet, extend='both')
+    levels = np.linspace(1, 9, num=8*2+1)
+    # plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap='gnuplot')
+    plt.contourf(xi, yi, zi, levels=levels, vmin=1, vmax=9, cmap='gnuplot', extend='both')
     plt.axis('equal')
     plt.tight_layout()
-    plt.savefig('results.png', dpi=300)
+    plt.colorbar()
+    # plt.savefig('results.png', dpi=300)
+    plt.show()
+    
