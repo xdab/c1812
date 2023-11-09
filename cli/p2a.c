@@ -183,7 +183,7 @@ void *p2a_thread_func(void *argument)
         return (void *)EXIT_FAILURE;
     }
 
-    if (malloc_caches(&parameters, n + 2) != EXIT_SUCCESS)
+    if (malloc_caches(&parameters, n + 3) != EXIT_SUCCESS)
     {
         fprintf(stderr, "p2a_thread_func t=%d: malloc_caches()\n", thread_argument->thread_id);
         return (void *)EXIT_FAILURE;
@@ -215,7 +215,7 @@ void *p2a_thread_func(void *argument)
         for (int i = 0; i < 3; i++)
             thread_argument->results[ai][i] = 0.0;
 
-        clear_caches(&parameters, n + 2);
+        clear_caches(&parameters, n + 3);
 
         for (int i = n - 1; i >= 3; i--)
         {

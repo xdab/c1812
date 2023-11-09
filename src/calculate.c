@@ -8,6 +8,8 @@
 #include "dl_p.h"
 #include "inv_cum_norm.h"
 #include "tl_anomalous.h"
+#include "tl_tropo.h"
+#include "pow.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -180,6 +182,15 @@ void copy_ctx_to_tl_anomalous_input(c1812_calculate_ctx_t *ctx, tl_anomalous_inp
 	input->b0 = ctx->b0;
 }
 
+void copy_ctx_to_tl_tropo_input(c1812_calculate_ctx_t *ctx, tl_tropo_input_t *input)
+{
+	input->dtot = ctx->dtot;
+	input->theta = ctx->theta;
+	input->f = ctx->f;
+	input->p = ctx->p;
+	input->N0 = ctx->DN;
+}
+
 void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 {
 	results->error = RESULTS_ERR_UNKNOWN;
@@ -283,19 +294,18 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 
 	double Lbam = Lbda + (Lminb0p - Lbda) * Fj; // eq (62)
 
-#ifdef EXTRA
-	double Lbs = tl_tropo(ctx.dtot, ctx.theta, ctx.f, ctx.p, parameters->N0);
+	tl_tropo_output_t tl_tropo_output;
+	tl_tropo_input_t tl_tropo_input;
+	copy_ctx_to_tl_tropo_input(&ctx, &tl_tropo_input);
+	tl_tropo(&tl_tropo_input, &tl_tropo_output);
 
-	double Lbc_pol[2];
-	Lbc_pol[0] = -5 * log10(pow(10, -0.2 * Lbs) + pow(10, -0.2 * Lbam[0]));
-	Lbc_pol[1] = -5 * log10(pow(10, -0.2 * Lbs) + pow(10, -0.2 * Lbam[1])); // eq (63)
-
-	double Lbc = Lbc_pol[parameters->pol];
+	double Lbc = -5 * log10(pow2(10, -0.2 * tl_tropo_output.Lbs) + pow2(10, -0.2 * Lbam));
 
 	// Location variability of losses (Section 4.8)
 	double Lloc = 0.0; // outdoors only (67a)
 	if (parameters->zone != RC_ZONE_SEA)
 	{
+		// TODO parametrize
 		double pL = 50;		 // 50% of locations
 		double sigmaL = 5.5; // dB
 		Lloc = -inv_cum_norm(pL / 100.0) * sigmaL;
@@ -305,7 +315,6 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	// (Sections 4.8 and 4.9) not implemented
 	results->Lb = fmax(pl_los_output.Lb0p, Lbc + Lloc); // eq (69)
 	results->error = RESULTS_ERR_NONE;
-#endif
 
 	results->Lb = fmax(pl_los_output.Lb0p, Lbd); // eq (69)
 	results->error = RESULTS_ERR_NONE;
