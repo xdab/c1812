@@ -60,22 +60,29 @@ if __name__ == '__main__':
     Xi, Yi = np.meshgrid(xi, yi)
     zi = interpolator(Xi, Yi)
 
-    tx_power_watts = 20
-    tx_power_dbm = 10 * np.log10(tx_power_watts * 1000)
-    tx_gain = -4
-    rx_gain = -4
-    s1_dbm = -121
-    s9_dbm = -73
-    s_dbm = 6
+    if True:
+        TX_POWER_W = 45
+        TX_POWER_DBM = 10 * np.log10(TX_POWER_W) + 30
+        TX_GAIN = 3
+        RX_GAIN = 0
+        S1_DBM = -121
+        S9_DBM = -73
+        S_DBM = 6
 
-    zi = tx_power_dbm - zi + tx_gain + rx_gain
-    zi = (zi - s1_dbm) / s_dbm
-    levels = np.linspace(1, 9, num=8*2+1)
-    # plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap='gnuplot')
-    plt.contourf(xi, yi, zi, levels=levels, vmin=1,
-                 vmax=9, cmap='gnuplot', extend='both')
+        zi = TX_POWER_DBM - zi + TX_GAIN + RX_GAIN
+        zi = (zi - S1_DBM) / S_DBM
+
+        STEPS_PER_S_UNIT = 1
+        levels = np.linspace(1, 9, num=8*STEPS_PER_S_UNIT+1)
+        plt.contourf(xi, yi, zi, levels=levels, vmin=1,
+                    vmax=9, cmap='gnuplot', extend='both')
+
+        plt.savefig('results.png', dpi=300)
+    else:
+        plt.pcolormesh(xi, yi, zi, vmin=0, vmax=10, cmap='gnuplot')
+    
     plt.axis('equal')
     plt.tight_layout()
     plt.colorbar()
-    # plt.savefig('results.png', dpi=300)
     plt.show()
+        

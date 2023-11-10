@@ -47,4 +47,15 @@ void cf_free(clutter_file_t *cf);
  */
 uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y);
 
+/**
+ * @brief Get bilinearly interpolated clutter to the given x, y coordinates.
+ *
+ * @param cf The ctfile_t structure to search.
+ * @param x The x coordinate.
+ * @param y The y coordinate.
+ *
+ * @return Bilinearly interpolated clutter value.
+ */
+uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y);
+
 #endif

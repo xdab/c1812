@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 void cf_zero(clutter_file_t *ctfile)
 {
@@ -16,7 +17,7 @@ void cf_zero(clutter_file_t *ctfile)
 int cf_open(clutter_file_t *cf, const char *path)
 {
 	cf_zero(cf);
-	
+
 	FILE *fp = fopen(path, "rb");
 	if (fp == NULL)
 	{
@@ -133,4 +134,52 @@ uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y)
 	double closest_y = nneighbor(cf->y, cf->y_size, y, &closest_y_index);
 
 	return cf->Ct[closest_y_index][closest_x_index];
+}
+
+uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y)
+{
+	int x1_index;
+	double x1 = nneighbor(cf->x, cf->x_size, x, &x1_index);
+	if (x1 > x)
+	{
+		x1_index--;
+		if (x1_index < 0)
+			return 0;
+		x1 = cf->x[x1_index];
+	}
+
+	int x2_index = x1_index + 1;
+	if (x2_index >= cf->x_size)
+		return 0;
+	double x2 = cf->x[x2_index];
+
+	int y1_index;
+	double y1 = nneighbor(cf->y, cf->y_size, y, &y1_index);
+	if (y1 > y)
+	{
+		y1_index--;
+		if (y1_index < 0)
+			return 0;
+		y1 = cf->y[y1_index];
+	}
+
+	int y2_index = y1_index + 1;
+	if (y2_index >= cf->y_size)
+		return 0;
+	double y2 = cf->y[y2_index];
+
+	// Find the clutter heights at the corners of the rectangle
+	double Ct11 = (double)cf->Ct[y1_index][x1_index];
+	double Ct12 = (double)cf->Ct[y1_index][x2_index];
+	double Ct21 = (double)cf->Ct[y2_index][x1_index];
+	double Ct22 = (double)cf->Ct[y2_index][x2_index];
+
+	// Find the heights at the edges of the rectangle
+	double Ct1 = Ct11 + (Ct12 - Ct11) * (x - x1) / (x2 - x1);
+	double Ct2 = Ct21 + (Ct22 - Ct21) * (x - x1) / (x2 - x1);
+
+	// Find the height at the point
+	double Ct = Ct1 + (Ct2 - Ct1) * (y - y1) / (y2 - y1);
+
+	return (uint16_t)round(Ct);
 }

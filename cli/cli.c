@@ -18,14 +18,13 @@
 
 #define MIN_ARGS 2
 #define DEFAULT_STREET_WIDTH 27.0
-#define PATH_LEN_MAX 256
 #define PARSED_TF_EXT ".tf"
 #define PARSED_TF_EXT_LEN 3
 #define WRITE_BINARY "wb"
 
 int validate_job_parameters(job_parameters_t *job_parameters);
 int open_terrain_files(terrain_file_t *tfs, char paths[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH], int *tf_count);
-
+int open_clutter_files(clutter_file_t *tfs, char paths[MAX_CLUTTER_FILES][MAX_VALUE_LENGTH], int *tf_count);
 
 int main(const int argc, const char *argv[])
 {
@@ -61,6 +60,14 @@ int main(const int argc, const char *argv[])
         return EXIT_FAILURE;
     }
 
+    int clutter_file_count;
+    clutter_file_t clutter_files[MAX_CLUTTER_FILES];
+    if (open_clutter_files(clutter_files, job_parameters.clutter, &clutter_file_count) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "main: open_clutter_files()\n");
+        return EXIT_FAILURE;
+    }
+
     if (terrain_file_count == 0)
     {
         fprintf(stderr, "main: no terrain data files specified\n");
@@ -70,7 +77,7 @@ int main(const int argc, const char *argv[])
     if (!isnan(job_parameters.rxx) && !isnan(job_parameters.rxy))
     {
         // Point-to-point calculation
-        if (p2p(&job_parameters, &parameters, terrain_files, NULL) != EXIT_SUCCESS)
+        if (p2p(&job_parameters, &parameters, terrain_files, clutter_files) != EXIT_SUCCESS)
         {
             fprintf(stderr, "main: p2p()\n");
             return EXIT_FAILURE;
@@ -79,20 +86,21 @@ int main(const int argc, const char *argv[])
     else
     {
         // Point-to-area calculation
-        if (p2a(&job_parameters, &parameters, terrain_files, NULL) != EXIT_SUCCESS)
+        if (p2a(&job_parameters, &parameters, terrain_files, clutter_files) != EXIT_SUCCESS)
         {
             fprintf(stderr, "main: p2a()\n");
             return EXIT_FAILURE;
         }
     }
 
-    // Free terrain files
     for (int i = 0; i < terrain_file_count; i++)
         tf_free(&terrain_files[i]);
 
+    for (int i = 0; i < clutter_file_count; i++)
+        cf_free(&clutter_files[i]);
+
     return EXIT_SUCCESS;
 }
-
 
 int validate_job_parameters(job_parameters_t *job_parameters)
 {
@@ -147,9 +155,7 @@ int validate_job_parameters(job_parameters_t *job_parameters)
     return EXIT_SUCCESS;
 }
 
-
 int open_terrain_files(terrain_file_t *tfs, char paths[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH], int *tf_count)
-
 {
     for (int i = 0; i < MAX_TERRAIN_FILES; i++)
     {
@@ -201,5 +207,34 @@ int open_terrain_files(terrain_file_t *tfs, char paths[MAX_TERRAIN_FILES][MAX_VA
     }
 
     *tf_count = MAX_TERRAIN_FILES;
+    return EXIT_SUCCESS;
+}
+
+int open_clutter_files(clutter_file_t *cfs, char paths[MAX_CLUTTER_FILES][MAX_VALUE_LENGTH], int *cf_count)
+{
+    for (int i = 0; i < MAX_CLUTTER_FILES; i++)
+    {
+        // Should not happen
+        if (paths[i] == NULL)
+        {
+            fprintf(stderr, "open_clutter_files: filenames[%d] == NULL\n", i);
+            return EXIT_FAILURE;
+        }
+
+        int len = strlen(paths[i]);
+        if (len == 0) // First empty filename marks the end of the list
+        {
+            *cf_count = i;
+            return EXIT_SUCCESS;
+        }
+
+        if (cf_open(&cfs[i], paths[i]) != EXIT_SUCCESS)
+        {
+            fprintf(stderr, "open_clutter_files: cf_open()\n");
+            return EXIT_FAILURE;
+        }
+    }
+
+    *cf_count = MAX_CLUTTER_FILES;
     return EXIT_SUCCESS;
 }

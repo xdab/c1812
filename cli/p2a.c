@@ -7,7 +7,8 @@
 #include "outfile.h"
 #include "c1812/calculate.h"
 
-#define KM 1000.0
+#define KM_M 1000.0
+#define M_CM 100.0
 
 typedef struct
 {
@@ -33,7 +34,7 @@ void free_caches(c1812_parameters_t *parameters);
 
 int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
-    int n = (int)ceil(job_parameters->radius / (job_parameters->xres * KM));
+    int n = (int)ceil(job_parameters->radius / (job_parameters->xres * KM_M));
     parameters->n = n;
     parameters->d = malloc(n * sizeof(double));
     if (parameters->d == NULL)
@@ -43,7 +44,7 @@ int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrai
     }
 
     for (int i = 0; i < n; i++)
-        parameters->d[i] = job_parameters->radius * i / (KM * (n - 1));
+        parameters->d[i] = job_parameters->radius * i / (KM_M * (n - 1));
 
     int angles_count = (int)ceil(360.0 / job_parameters->ares);
     double *angles = malloc(angles_count * sizeof(double));
@@ -186,6 +187,13 @@ void *p2a_thread_func(void *argument)
         return (void *)EXIT_FAILURE;
     }
 
+    parameters.Ct = malloc(parameters.n * sizeof(double));
+    if (parameters.Ct == NULL)
+    {
+        fprintf(stderr, "p2a_thread_func t=%d: malloc() parameters.Ct\n", thread_argument->thread_id);
+        return (void *)EXIT_FAILURE;
+    }
+
     if (malloc_caches(&parameters, n + 3) != EXIT_SUCCESS)
     {
         fprintf(stderr, "p2a_thread_func t=%d: malloc_caches()\n", thread_argument->thread_id);
@@ -213,6 +221,7 @@ void *p2a_thread_func(void *argument)
             xi = x1 + (x2 - x1) * t;
             yi = y1 + (y2 - y1) * t;
             parameters.h[i] = tf_get_bilinear(&tfs[0], xi, yi);
+            parameters.Ct[i] = (double)cf_get_bilinear(&cfs[0], xi, yi) / M_CM;
         }
 
         for (int i = 0; i < 3; i++)
