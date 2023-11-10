@@ -60,9 +60,14 @@ build
 # Program specific files
 job.txt
 mazowieckie.txt
+tmp*
 *.cf
 *.rf
 *.tf
+*.jpg
 *.png
 *.tif
 *.bmp
+*.gif
+*.csv
+*#

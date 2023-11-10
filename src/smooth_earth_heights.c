@@ -1,5 +1,4 @@
 #include "smooth_earth_heights.h"
-#include "constants.h"
 #include "pow.h"
 #include <math.h>
 #include <stdlib.h>
@@ -30,12 +29,13 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         for (int i = 1; i < input->n; i++)
         {
             double diff_d = input->d[i] - input->d[i - 1];
-            v1 += diff_d * (input->h[i] + input->h[i - 1]);
+            double sum_h = input->h[i] + input->h[i - 1];
+            v1 += diff_d * sum_h;
             v2 += diff_d * (input->h[i] * (2 * input->d[i] + input->d[i - 1]) + input->h[i - 1] * (input->d[i] + 2 * input->d[i - 1]));
             if (use_v1_v2_caches)
             {
-                input->v1_cache[i] = v1;
-                input->v2_cache[i] = v2;
+                input->v1_cache[i + 1] = v1;
+                input->v2_cache[i + 1] = v2;
             }
         }
     }
@@ -96,17 +96,17 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     {
         for (int i = 1; i < input->n - 1; i++)
         {
-            theta = KM * atan((input->h[i] - output->hts) / (KM * input->d[i]) - input->d[i] / (2 * ER));
+            theta = KM * atan((input->h[i] - output->hts) / (KM * input->d[i]) - input->d[i] / (2 * input->ae));
             theta_max = fmax(theta_max, theta);
             if (use_theta_max_cache)
             {
-                input->theta_max_cache[i + 2] = theta_max;
+                input->theta_max_cache[i + 1] = theta_max;
             }
         }
     }
 
-    double theta_td = KM * atan((output->hrs - output->hts) / (KM * input->dtot) - input->dtot / (2 * ER));
-    double theta_rd = KM * atan((output->hts - output->hrs) / (KM * input->dtot) - input->dtot / (2 * ER));
+    double theta_td = KM * atan((output->hrs - output->hts) / (KM * input->dtot) - input->dtot / (2 * input->ae));
+    double theta_rd = KM * atan((output->hts - output->hrs) / (KM * input->dtot) - input->dtot / (2 * input->ae));
     double theta_t = fmax(theta_max, theta_td);
 
     double theta_r;
@@ -117,10 +117,10 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            theta = KM * atan((input->h[i] - output->hrs) / (KM * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * ER));
+            theta = KM * atan((input->h[i] - output->hrs) / (KM * (input->dtot - input->d[i])) - (input->dtot - input->d[i]) / (2 * input->ae));
             theta_r = fmax(theta_r, theta);
 
-            double nu = (input->h[i] + 500 * ER * (input->d[i] * (input->dtot - input->d[i]) - input->d[i - 1] * (input->dtot - input->d[i - 1])) - (output->hts * (input->dtot - input->d[i - 1]) + output->hrs * input->d[i - 1]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i - 1] * (input->dtot - input->d[i - 1])));
+            double nu = (input->h[i] + 500 * input->ae * (input->d[i] * (input->dtot - input->d[i]) - input->d[i - 1] * (input->dtot - input->d[i - 1])) - (output->hts * (input->dtot - input->d[i - 1]) + output->hrs * input->d[i - 1]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i - 1] * (input->dtot - input->d[i - 1])));
             if (nu > numax)
             {
                 numax = nu;
@@ -135,7 +135,8 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double nu = (input->h[i] + 500 * ER * input->d[i] * (input->dtot - input->d[i]) - (output->hts * (input->dtot - input->d[i]) + output->hrs * input->d[i]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
+            double Ce = 1.0 / input->ae;
+            double nu = (input->h[i] + 500 * Ce * input->d[i] * (input->dtot - input->d[i]) - (output->hts * (input->dtot - input->d[i]) + output->hrs * input->d[i]) / input->dtot) * sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
             if (nu > numax)
             {
                 numax = nu;
@@ -147,7 +148,7 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
     output->dlr = input->dtot - output->dlt;
 
     // Angular distance
-    double theta_tot = KM * input->dtot / ER + theta_t + theta_r;
+    double theta_tot = KM * input->dtot / input->ae + theta_t + theta_r;
     output->theta = theta_tot;
     output->theta_t = theta_t;
     output->theta_r = theta_r;
@@ -156,13 +157,13 @@ void smooth_earth_heights(seh_input_t *input, seh_output_t *output)
 
     // Calculate the smooth-Earth heights at transmitter and receiver as
     // required for the roughness factor
-    double hst_smooth = fmin(output->hst, input->h[0]);
-    double hsr_smooth = fmin(output->hsr, input->h[input->n - 1]);
+    output->hst = fmin(output->hst, input->h[0]);
+    output->hsr = fmin(output->hsr, input->h[input->n - 1]);
 
     // The terminal effective heigts for the ducting/layer-reflection model
-    output->hte = input->htg + input->h[0] - hst_smooth;
-    output->hre = input->hrg + input->h[input->n - 1] - hsr_smooth;
+    output->hte = input->htg + input->h[0] - output->hst;
+    output->hre = input->hrg + input->h[input->n - 1] - output->hsr;
 
     // TODO
-    output->hm = 0;
+    output->hm = 0.0;
 }

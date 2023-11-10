@@ -12,7 +12,7 @@ double beta0(double phi, double dtm, double dlm)
     if (fabs(phi) <= 70)
     {
         mu4 = pow2(mu1, -0.935 + 0.0176 * fabs(phi));           // (4)
-        return pow2(210, -0.015 * fabs(phi) + 1.67) * mu1 * mu4; // (5)
+        return pow2(10, -0.015 * fabs(phi) + 1.67) * mu1 * mu4; // (5)
     }
     else
     {

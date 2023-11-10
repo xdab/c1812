@@ -15,3 +15,4 @@ add_executable(cli ${CLI_SOURCES} ${CLI_HEADERS})
 set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
 target_link_libraries(cli ${PROJECT_NAME})
 target_link_libraries(cli m)
+

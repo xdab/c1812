@@ -1,7 +1,6 @@
 #include "calculate.h"
 #include "rf.h"
 
-#include "constants.h"
 #include "beta0.h"
 #include "smooth_earth_heights.h"
 #include "pl_los.h"
@@ -14,6 +13,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#define ER 6371.0
+#define DEBUG 0
 
 typedef struct
 {
@@ -99,7 +101,7 @@ void copy_ctx_to_seh_input(c1812_calculate_ctx_t *ctx, seh_input_t *input)
 	input->lambda = ctx->lambda;
 	input->htg = ctx->htg;
 	input->hrg = ctx->hrg;
-
+	input->ae = ctx->ae;
 	input->v1_cache = ctx->v1_cache;
 	input->v2_cache = ctx->v2_cache;
 	input->theta_max_cache = ctx->theta_max_cache;
@@ -235,6 +237,37 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	smooth_earth_heights(&seh_input, &seh_output);
 	copy_seh_output_to_ctx(&seh_output, &ctx);
 
+#if DEBUG == 1
+	printf("d (km) = %f\n", ctx.dtot);
+	printf("dlt (km) = %f\n", ctx.dlt);
+	printf("dlr (km) = %f\n", ctx.dlr);
+	printf("th_t (mrad) = %f\n", ctx.theta_t);
+	printf("th_r (mrad) = %f\n", ctx.theta_r);
+	printf("th (mrad) = %f\n", ctx.theta);
+	printf("hts (m) = %f\n", ctx.hts);
+	printf("hrs (m) = %f\n", ctx.hrs);
+	printf("htc (m) = %f\n", ctx.htc);
+	printf("hrc (m) = %f\n", ctx.hrc);
+	printf("w = %f\n", ctx.omega);
+	printf("dtm (km) = %f\n", ctx.dtm);
+	printf("dlm (km) = %f\n", ctx.dlm);
+	printf("phi (deg) = %f\n", parameters->lat);
+	printf("b0 (%%) = %f\n", ctx.b0);
+	printf("ae (km) = %f\n", ctx.ae);
+	printf("hst (m) = %f\n", ctx.hst);
+	printf("hsr (m) = %f\n", ctx.hsr);
+	printf("hst (m) = %f\n", ctx.hst);
+	printf("hsr (m) = %f\n", ctx.hsr);
+	printf("hstd (m) = %f\n", ctx.hstd);
+	printf("hsrd (m) = %f\n", ctx.hsrd);
+	printf("htc' (m) = %f\n", ctx.htc - ctx.hstd);
+	printf("hrc' (m) = %f\n", ctx.hrc - ctx.hsrd);
+	printf("hte (m) = %f\n", ctx.hte);
+	printf("hre (m) = %f\n", ctx.hre);
+	printf("hm (m) = %f\n", ctx.hm);
+	printf("\n");
+#endif
+
 	// pl_los
 	pl_los_input_t pl_los_input;
 	copy_ctx_to_pl_los_input(&ctx, &pl_los_input);
@@ -316,6 +349,28 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	results->Lb = fmax(pl_los_output.Lb0p, Lbc + Lloc); // eq (69)
 	results->error = RESULTS_ERR_NONE;
 
-	results->Lb = fmax(pl_los_output.Lb0p, Lbd); // eq (69)
-	results->error = RESULTS_ERR_NONE;
+#if DEBUG == 1
+	printf("Fi = %g\n", Fi);
+	printf("Fj = %f\n", Fj);
+	printf("Fk = %f\n", Fk);
+	printf("Lbfs = %f\n", pl_los_output.Lbfs);
+	printf("Lb0p = %f\n", pl_los_output.Lb0p);
+	printf("Lb0b = %f\n", pl_los_output.Lb0b);
+	printf("Lbulla (dB) = %f\n", dl_p_output.Lbulla50);
+	printf("Lbulls (dB) = %f\n", dl_p_output.Lbulls50);
+	printf("Ldsph (dB) = %f\n", dl_p_output.Ldsph50);
+	printf("Ld50 (dB) = %f\n", dl_p_output.Ld50[parameters->pol]);
+	printf("Ldb (dB) = %f\n", dl_p_output.Ldb[parameters->pol]);
+	printf("Ldp (dB) = %f\n", dl_p_output.Ldp[parameters->pol]);
+	printf("Lbd50 (dB) = %f\n", Lbd50);
+	printf("Lbd (dB) = %f\n", Lbd);
+	printf("Lminb0p (dB) = %f\n", Lminb0p);
+	printf("Lba (dB) = %f\n", Lba);
+	printf("Lminbap (dB) = %f\n", Lminbap);
+	printf("Lbda (dB) = %f\n", Lbda);
+	printf("Lbam (dB) = %f\n", Lbam);
+	printf("Lbs (dB) = %f\n", tl_tropo_output.Lbs);
+	printf("Lbc (dB) = %f\n", Lbc);
+	printf("Lb (dB) = %f\n", results->Lb);
+#endif
 }

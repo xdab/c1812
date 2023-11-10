@@ -11,6 +11,7 @@ typedef struct
     double lambda;
     double htg;
     double hrg;
+    double ae;
 
     // Optional caches
     double *v1_cache;

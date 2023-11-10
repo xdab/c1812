@@ -59,10 +59,7 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
     }
 
     for (int i = 0; i < angles_count; i++)
-    {
-        // angles[i] = 360.0 * i / angles_count;
-        angles[i] = job->ares * i;
-    }
+        angles[i] = 360.0 * i / angles_count;
 
     double **results = malloc(angles_count * sizeof(double *));
     if (results == NULL)
@@ -149,8 +146,8 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
 
 #define IMG
 #ifdef IMG
-    
-    const int N = 900;
+
+    const int N = 800;
     const int W = N;
     const int H = N;
 
@@ -188,8 +185,6 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
                 ni = 3;
 
             double loss = results[ai][ni];
-            if (loss == 0.0)
-                continue;
 
             // Translate loss to received signal strength
             double Prx = link_budget(
@@ -213,7 +208,7 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
         }
     }
 
-    if (image_write(&image, "../image.bmp") != EXIT_SUCCESS)
+    if (image_write(&image, "./image.bmp") != EXIT_SUCCESS)
     {
         fprintf(stderr, "p2a: image_write()\n");
         return EXIT_FAILURE;

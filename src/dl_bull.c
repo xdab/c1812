@@ -2,6 +2,7 @@
 #include "pow.h"
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define h(input, i) ((input->h != NULL) ? input->h[i] : 0.0)
 #define Ct(input, i) ((input->Ct != NULL) ? input->Ct[i] : 0.0)
@@ -17,13 +18,14 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
     double Stim = -INFINITY;
     for (int i = 1; i < input->n - 1; i++)
     {
-        double temp = g(input, i);
-        temp += 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
-        temp -= input->hts;
-        temp /= input->d[i];
+        double dtot_min_d = input->dtot - input->d[i];
+        double Sti = g(input, i);
+        Sti += 500 * Ce * input->d[i] * dtot_min_d;
+        Sti -= input->hts;
+        Sti /= input->d[i];
 
-        if (temp > Stim)
-            Stim = temp;
+        if (Sti > Stim)
+            Stim = Sti;
     }
 
     // Calculate the slope of the line from transmitter to receiver assuming a
@@ -40,9 +42,11 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         double numax = -INFINITY;
         for (int i = 1; i < input->n - 1; i++)
         {
-            double nu = g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]);
-            nu -= (input->hts * (input->dtot - input->d[i]) + input->hrs * input->d[i]) / input->dtot;
-            nu *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * (input->dtot - input->d[i])));
+            double dtot_min_d = input->dtot - input->d[i];
+            double nu = g(input, i);
+            nu += 500 * Ce * input->d[i] * dtot_min_d;
+            nu -= (input->hts * dtot_min_d + input->hrs * input->d[i]) / input->dtot;
+            nu *= sqrt(0.002 * input->dtot / (input->lambda * input->d[i] * dtot_min_d));
             if (nu > numax)
                 numax = nu;
         }
@@ -55,11 +59,15 @@ void dl_bull(dl_bull_input_t *input, dl_bull_output_t *output)
         // Find the intermediate profile point with the highest slope of the
         // line from the receiver to the point
         double Srim = -INFINITY;
-        for (int i = 1; i < input->n - 2; i++)
+        for (int i = 1; i < input->n - 1; i++)
         {
-            double temp = (g(input, i) + 500 * Ce * input->d[i] * (input->dtot - input->d[i]) - input->hrs) / (input->dtot - input->d[i]);
-            if (temp > Srim)
-                Srim = temp;
+            double dtot_min_d = input->dtot - input->d[i];
+            double Sri = g(input, i);
+            Sri += 500 * Ce * input->d[i] * dtot_min_d;
+            Sri -= input->hrs;
+            Sri /= dtot_min_d;
+            if (Sri > Srim)
+                Srim = Sri;
         }
 
         // Calculate the distance of the Bullington point from the transmitter:
