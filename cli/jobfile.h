@@ -5,8 +5,9 @@
 
 #define MAX_LINE_LENGTH 256
 #define MAX_FIELD_LENGTH 32
-#define MAX_VALUE_LENGTH (MAX_LINE_LENGTH - MAX_FIELD_LENGTH)
-#define MAX_DATA_FILES 16
+#define MAX_VALUE_LENGTH (MAX_LINE_LENGTH - MAX_FIELD_LENGTH - 1)
+#define MAX_TERRAIN_FILES 1
+#define MAX_CLUTTER_FILES 1
 
 typedef struct
 {
@@ -26,8 +27,9 @@ typedef struct
     double ares;   // Calculation angular resolution [deg]
     int threads;   // Number of threads to use, default 1
 
-    char out[MAX_VALUE_LENGTH];                  // Output file path
-    char data[MAX_DATA_FILES][MAX_VALUE_LENGTH]; // Datafile paths
+    char out[MAX_VALUE_LENGTH];                        // Output file path
+    char terrain[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH]; // Terrain file paths
+    char clutter[MAX_CLUTTER_FILES][MAX_VALUE_LENGTH]; // Clutter file paths
 
 } job_parameters_t;
 

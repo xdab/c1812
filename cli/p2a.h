@@ -3,17 +3,19 @@
 
 #include "jobfile.h"
 #include "c1812/parameters.h"
-#include "datafile.h"
+#include "terrain_file.h"
+#include "clutter_file.h"
 
 /**
  * @brief Point-to-area calculation
  *
  * @param job_parameters Job parameters
  * @param parameters Calculation parameters
- * @param datafiles Datafiles
+ * @param tfs Terrain data files
+ * @param cfs Clutter data files
  *
  * @return EXIT_SUCCESS on success, EXIT_FAILURE on failure
  */
-int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles);
+int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs);
 
 #endif

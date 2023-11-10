@@ -4,7 +4,8 @@
 #include "c1812/sunit.h"
 
 #include "jobfile.h"
-#include "datafile.h"
+#include "terrain_file.h"
+#include "clutter_file.h"
 #include "outfile.h"
 #include "p2a.h"
 #include "p2p.h"
@@ -17,13 +18,14 @@
 
 #define MIN_ARGS 2
 #define DEFAULT_STREET_WIDTH 27.0
-#define DATAFILE_PATH_MAX 256
-#define DATAFILE_EXT ".df"
-#define DATAFILE_EXT_LEN 3
+#define PATH_LEN_MAX 256
+#define PARSED_TF_EXT ".tf"
+#define PARSED_TF_EXT_LEN 3
 #define WRITE_BINARY "wb"
 
 int validate_job_parameters(job_parameters_t *job_parameters);
-int open_datafiles(datafile_t *datafiles, char filenames[MAX_DATA_FILES][MAX_VALUE_LENGTH], int *datafile_count);
+int open_terrain_files(terrain_file_t *tfs, char paths[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH], int *tf_count);
+
 
 int main(const int argc, const char *argv[])
 {
@@ -51,24 +53,24 @@ int main(const int argc, const char *argv[])
         return EXIT_FAILURE;
     }
 
-    int datafile_count;
-    datafile_t datafiles[MAX_DATA_FILES];
-    if (open_datafiles(datafiles, job_parameters.data, &datafile_count) != EXIT_SUCCESS)
+    int terrain_file_count;
+    terrain_file_t terrain_files[MAX_TERRAIN_FILES];
+    if (open_terrain_files(terrain_files, job_parameters.terrain, &terrain_file_count) != EXIT_SUCCESS)
     {
-        fprintf(stderr, "main: open_datafiles()\n");
+        fprintf(stderr, "main: open_terrain_files()\n");
         return EXIT_FAILURE;
     }
 
-    if (datafile_count == 0)
+    if (terrain_file_count == 0)
     {
-        fprintf(stderr, "main: no datafiles specified\n");
+        fprintf(stderr, "main: no terrain data files specified\n");
         return EXIT_FAILURE;
     }
 
     if (!isnan(job_parameters.rxx) && !isnan(job_parameters.rxy))
     {
         // Point-to-point calculation
-        if (p2p(&job_parameters, &parameters, datafiles) != EXIT_SUCCESS)
+        if (p2p(&job_parameters, &parameters, terrain_files, NULL) != EXIT_SUCCESS)
         {
             fprintf(stderr, "main: p2p()\n");
             return EXIT_FAILURE;
@@ -77,16 +79,16 @@ int main(const int argc, const char *argv[])
     else
     {
         // Point-to-area calculation
-        if (p2a(&job_parameters, &parameters, datafiles) != EXIT_SUCCESS)
+        if (p2a(&job_parameters, &parameters, terrain_files, NULL) != EXIT_SUCCESS)
         {
             fprintf(stderr, "main: p2a()\n");
             return EXIT_FAILURE;
         }
     }
 
-    // Free datafiles
-    for (int i = 0; i < datafile_count; i++)
-        datafile_free(&datafiles[i]);
+    // Free terrain files
+    for (int i = 0; i < terrain_file_count; i++)
+        tf_free(&terrain_files[i]);
 
     return EXIT_SUCCESS;
 }
@@ -146,57 +148,58 @@ int validate_job_parameters(job_parameters_t *job_parameters)
 }
 
 
-int open_datafiles(datafile_t *datafiles, char filenames[MAX_DATA_FILES][MAX_VALUE_LENGTH], int *datafile_count)
+int open_terrain_files(terrain_file_t *tfs, char paths[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH], int *tf_count)
+
 {
-    for (int i = 0; i < MAX_DATA_FILES; i++)
+    for (int i = 0; i < MAX_TERRAIN_FILES; i++)
     {
         // Should not happen
-        if (filenames[i] == NULL)
+        if (paths[i] == NULL)
         {
-            fprintf(stderr, "open_datafiles: filenames[%d] == NULL\n", i);
+            fprintf(stderr, "open_terrain_files: filenames[%d] == NULL\n", i);
             return EXIT_FAILURE;
         }
 
-        int len = strlen(filenames[i]);
+        int len = strlen(paths[i]);
         if (len == 0) // First empty filename marks the end of the list
         {
-            *datafile_count = i;
+            *tf_count = i;
             return EXIT_SUCCESS;
         }
 
-        // If data[i] ends in .df, then it's an already processed datafile
+        // If data[i] ends in .df, then it's an already processed file
         // that can be opened directly
-        if (strcmp(filenames[i] + len - DATAFILE_EXT_LEN, DATAFILE_EXT) == 0)
+        if (strcmp(paths[i] + len - PARSED_TF_EXT_LEN, PARSED_TF_EXT) == 0)
         {
-            if (datafile_open(&datafiles[i], filenames[i]) != EXIT_SUCCESS)
+            if (tf_open(&tfs[i], paths[i]) != EXIT_SUCCESS)
             {
-                fprintf(stderr, "open_datafiles: datafile_open()\n");
+                fprintf(stderr, "open_terrain_files: tf_open()\n");
                 return EXIT_FAILURE;
             }
         }
-        else // Otherwise, it's a text datafile that needs to be parsed
+        else // Otherwise, it's a text file that needs to be parsed
         {
-            if (datafile_parse(&datafiles[i], filenames[i]) != EXIT_SUCCESS)
+            if (tf_parse(&tfs[i], paths[i]) != EXIT_SUCCESS)
             {
-                fprintf(stderr, "open_datafiles: datafile_parse()\n");
+                fprintf(stderr, "open_terrain_files: tf_parse()\n");
                 return EXIT_FAILURE;
             }
 
-            // The parsed datafile is stored for future use
-            char *datafile_path = malloc(len + 1 + DATAFILE_EXT_LEN + 1);
-            strcpy(datafile_path, filenames[i]);
-            strcat(datafile_path, DATAFILE_EXT);
+            // The parsed file is stored for future use
+            char *parsed_tf_path = malloc(len + 1 + PARSED_TF_EXT_LEN + 1);
+            strcpy(parsed_tf_path, paths[i]);
+            strcat(parsed_tf_path, PARSED_TF_EXT);
 
-            if (datafile_store(&datafiles[i], datafile_path) != EXIT_SUCCESS)
+            if (tf_store(&tfs[i], parsed_tf_path) != EXIT_SUCCESS)
             {
-                fprintf(stderr, "open_datafiles: datafile_store()\n");
+                fprintf(stderr, "open_terrain_files: tf_store()\n");
                 return EXIT_FAILURE;
             }
 
-            free(datafile_path);
+            free(parsed_tf_path);
         }
     }
 
-    *datafile_count = MAX_DATA_FILES;
+    *tf_count = MAX_TERRAIN_FILES;
     return EXIT_SUCCESS;
 }

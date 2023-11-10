@@ -15,7 +15,8 @@ typedef struct
 
     job_parameters_t *job_parameters;
     c1812_parameters_t *parameters;
-    datafile_t *datafiles;
+    terrain_file_t *tfs;
+    clutter_file_t *cfs;
 
     double *angles;
     int angle_count;
@@ -30,7 +31,7 @@ int malloc_caches(c1812_parameters_t *parameters, int n);
 void clear_caches(c1812_parameters_t *parameters, int n);
 void free_caches(c1812_parameters_t *parameters);
 
-int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles)
+int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
     int n = (int)ceil(job_parameters->radius / (job_parameters->xres * KM));
     parameters->n = n;
@@ -95,7 +96,8 @@ int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafi
 
         thread_arguments[t].job_parameters = job_parameters;
         thread_arguments[t].parameters = parameters;
-        thread_arguments[t].datafiles = datafiles;
+        thread_arguments[t].tfs = tfs;
+        thread_arguments[t].cfs = cfs;
 
         thread_arguments[t].angles = angles;
         thread_arguments[t].angle_count = angles_count;
@@ -168,8 +170,9 @@ int p2a(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafi
 void *p2a_thread_func(void *argument)
 {
     p2a_thread_argument_t *thread_argument = (p2a_thread_argument_t *)argument;
-    job_parameters_t *job_parameters = thread_argument->job_parameters;
-    datafile_t *datafiles = thread_argument->datafiles;
+    job_parameters_t *job = thread_argument->job_parameters;
+    terrain_file_t *tfs = thread_argument->tfs;
+    clutter_file_t *cfs = thread_argument->cfs;
 
     c1812_parameters_t *master_parameters = thread_argument->parameters;
     c1812_parameters_t parameters;
@@ -189,7 +192,7 @@ void *p2a_thread_func(void *argument)
         return (void *)EXIT_FAILURE;
     }
 
-    double x1 = job_parameters->txx, y1 = job_parameters->txy;
+    double x1 = job->txx, y1 = job->txy;
     double angle;
     double x2, y2;
     double xi, yi;
@@ -201,15 +204,15 @@ void *p2a_thread_func(void *argument)
     {
         angle = thread_argument->angles[ai];
 
-        x2 = job_parameters->txx + job_parameters->radius * cos(angle * M_PI / 180.0);
-        y2 = job_parameters->txy + job_parameters->radius * sin(angle * M_PI / 180.0);
+        x2 = job->txx + job->radius * cos(angle * M_PI / 180.0);
+        y2 = job->txy + job->radius * sin(angle * M_PI / 180.0);
 
         for (int i = 0; i < n; i++)
         {
             t = i / (n - 1.0);
             xi = x1 + (x2 - x1) * t;
             yi = y1 + (y2 - y1) * t;
-            parameters.h[i] = datafile_get_bilinear(&datafiles[0], xi, yi);
+            parameters.h[i] = tf_get_bilinear(&tfs[0], xi, yi);
         }
 
         for (int i = 0; i < 3; i++)

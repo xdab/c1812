@@ -54,9 +54,14 @@ dkms.conf
 # Build directory
 build
 
+# Python 
+*.pyc
+
 # Program specific files
 job.txt
 mazowieckie.txt
-*.df
+*.cf
 *.rf
+*.tf
 *.png
+*.tif

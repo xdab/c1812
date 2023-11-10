@@ -36,7 +36,6 @@ if __name__ == '__main__':
         angles_a = np.array(angles)
         losses_a = np.array(losses)
 
-
     distances_a = np.linspace(0, radius, num=n)
 
     x = []
@@ -73,10 +72,10 @@ if __name__ == '__main__':
     zi = (zi - s1_dbm) / s_dbm
     levels = np.linspace(1, 9, num=8*2+1)
     # plt.pcolormesh(xi, yi, zi, vmin=1, vmax=9, cmap='gnuplot')
-    plt.contourf(xi, yi, zi, levels=levels, vmin=1, vmax=9, cmap='gnuplot', extend='both')
+    plt.contourf(xi, yi, zi, levels=levels, vmin=1,
+                 vmax=9, cmap='gnuplot', extend='both')
     plt.axis('equal')
     plt.tight_layout()
     plt.colorbar()
     # plt.savefig('results.png', dpi=300)
     plt.show()
-    

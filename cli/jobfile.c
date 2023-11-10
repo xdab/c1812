@@ -39,7 +39,8 @@
 #define FIELD_ARES "ares"
 #define FIELD_THREADS "threads"
 #define FIELD_OUT "out"
-#define FIELD_DATA "data"
+#define FIELD_TERRAIN "terrain"
+#define FIELD_CLUTTER "clutter"
 
 int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value);
 
@@ -62,7 +63,8 @@ void jobfile_zero(job_parameters_t *job_parameters)
     job_parameters->threads = 1;
 
     memset(job_parameters->out, 0, sizeof(job_parameters->out));
-    memset(job_parameters->data, 0, sizeof(job_parameters->data));
+    memset(job_parameters->terrain, 0, sizeof(job_parameters->terrain));
+    memset(job_parameters->clutter, 0, sizeof(job_parameters->clutter));
 }
 
 int jobfile_read(job_parameters_t *job_parameters, c1812_parameters_t *parameters, const char *path)
@@ -213,17 +215,29 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
         }
         strncpy(job_parameters->out, value, MAX_VALUE_LENGTH);
     }
-    else if (strcmp(field, FIELD_DATA) == EQUAL)
+    else if (strcmp(field, FIELD_TERRAIN) == EQUAL)
     {
         int i = 0;
-        while (i < MAX_DATA_FILES && strlen(job_parameters->data[i]) > 0)
+        while (i < MAX_TERRAIN_FILES && strlen(job_parameters->terrain[i]) > 0)
             i++;
-        if (i == MAX_DATA_FILES)
+        if (i == MAX_TERRAIN_FILES)
         {
-            fprintf(stderr, "_jobfile_set_field: too many data files\n");
+            fprintf(stderr, "_jobfile_set_field: too many terrain files\n");
             return EXIT_FAILURE;
         }
-        strncpy(job_parameters->data[i], value, MAX_VALUE_LENGTH);
+        strncpy(job_parameters->terrain[i], value, MAX_VALUE_LENGTH);
+    }
+    else if (strcmp(field, FIELD_CLUTTER) == EQUAL)
+    {
+        int i = 0;
+        while (i < MAX_CLUTTER_FILES && strlen(job_parameters->clutter[i]) > 0)
+            i++;
+        if (i == MAX_CLUTTER_FILES)
+        {
+            fprintf(stderr, "_jobfile_set_field: too many clutter files\n");
+            return EXIT_FAILURE;
+        }
+        strncpy(job_parameters->clutter[i], value, MAX_VALUE_LENGTH);
     }
     else
     {

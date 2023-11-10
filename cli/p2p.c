@@ -1,6 +1,7 @@
 #include "p2p.h"
 #include "c1812/parameters.h"
 #include "c1812/calculate.h"
+#include "c1812/pow.h"
 #include "c1812/sunit.h"
 #include "c1812/rf.h"
 #include <math.h>
@@ -9,12 +10,12 @@
 
 #define KM 1000.0
 
-int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles);
+int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs);
 
-int p2p(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles)
+int p2p(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
     // Point-to-point calculation
-    if (p2p_prepare(job_parameters, parameters, datafiles) != EXIT_SUCCESS)
+    if (p2p_prepare(job_parameters, parameters, tfs, cfs) != EXIT_SUCCESS)
     {
         fprintf(stderr, "p2p: prepare_point_to_point()\n");
         return EXIT_FAILURE;
@@ -54,13 +55,13 @@ int p2p(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafi
     return EXIT_SUCCESS;
 }
 
-int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters, datafile_t *datafiles)
+int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
     double x1 = job_parameters->txx;
     double y1 = job_parameters->txy;
     double x2 = job_parameters->rxx;
     double y2 = job_parameters->rxy;
-    double distance = sqrt(pow((x2 - x1) / KM, 2) + pow((y2 - y1) / KM, 2)); // [km]
+    double distance = sqrt(pow2((x2 - x1) / KM, 2) + pow2((y2 - y1) / KM, 2)); // [km]
 
     int n = (int)ceil(distance / job_parameters->xres);
 
@@ -84,7 +85,7 @@ int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters
         double xi = x1 + (x2 - x1) * i / (n - 1);
         double yi = y1 + (y2 - y1) * i / (n - 1);
         d[i] = distance * i / (n - 1);
-        h[i] = datafile_get_bilinear(&datafiles[0], xi, yi);
+        h[i] = tf_get_bilinear(&tfs[0], xi, yi);
     }
 
     parameters->n = n;
