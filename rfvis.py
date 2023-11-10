@@ -61,10 +61,10 @@ if __name__ == '__main__':
     zi = interpolator(Xi, Yi)
 
     if True:
-        TX_POWER_W = 45
+        TX_POWER_W = 5
         TX_POWER_DBM = 10 * np.log10(TX_POWER_W) + 30
-        TX_GAIN = 3
-        RX_GAIN = 0
+        TX_GAIN = -4
+        RX_GAIN = -4
         S1_DBM = -121
         S9_DBM = -73
         S_DBM = 6
@@ -75,11 +75,11 @@ if __name__ == '__main__':
         STEPS_PER_S_UNIT = 1
         levels = np.linspace(1, 9, num=8*STEPS_PER_S_UNIT+1)
         plt.contourf(xi, yi, zi, levels=levels, vmin=1,
-                    vmax=9, cmap='gnuplot', extend='both')
+                    vmax=9, cmap='inferno', extend='both')
 
         plt.savefig('results.png', dpi=300)
     else:
-        plt.pcolormesh(xi, yi, zi, vmin=0, vmax=10, cmap='gnuplot')
+        plt.pcolormesh(xi, yi, zi, vmin=0, vmax=10, cmap='inferno')
     
     plt.axis('equal')
     plt.tight_layout()
