@@ -12,36 +12,44 @@
 #define COMMENT_CHAR '#'
 #define SPLIT_CHARS " \n"
 #define EQUAL 0
-#define FIELD_FREQ "freq"
-#define FIELD_POL "pol"
+
+#define FIELD_FREQ "frequency"
+#define FIELD_POL "polarization"
 #define FIELD_POL_HORIZONTAL "horizontal"
 #define FIELD_POL_VERTICAL "vertical"
 #define FIELD_ZONE "zone"
 #define FIELD_ZONE_INLAND "inland"
 #define FIELD_ZONE_COASTAL "coastal"
 #define FIELD_ZONE_SEA "sea"
-#define FIELD_LAT "lat"
-#define FIELD_LON "lon"
+#define FIELD_LAT "latitude"
+#define FIELD_LON "longitude"
 #define FIELD_N0 "n0"
 #define FIELD_DN "dn"
-#define FIELD_TXX "txx"
-#define FIELD_TXY "txy"
-#define FIELD_TXH "txh"
-#define FIELD_TXPWR "txpwr"
-#define FIELD_TXGAIN "txgain"
-#define FIELD_RXX "rxx"
-#define FIELD_RXY "rxy"
-#define FIELD_RXH "rxh"
-#define FIELD_RXGAIN "rxgain"
+#define FIELD_TXX "tx_x"
+#define FIELD_TXY "tx_y"
+#define FIELD_TXH "tx_h"
+#define FIELD_TXPWR "tx_power"
+#define FIELD_TXGAIN "tx_gain"
+#define FIELD_RXX "rx_x"
+#define FIELD_RXY "rx_y"
+#define FIELD_RXH "rx_h"
+#define FIELD_RXGAIN "rx_gain"
 #define FIELD_P "p"
-#define FIELD_XRES "xres"
+#define FIELD_XRES "spatial_resolution"
+#define FIELD_ARES "angular_resolution"
 #define FIELD_RADIUS "radius"
-#define FIELD_ARES "ares"
 #define FIELD_THREADS "threads"
-#define FIELD_OUT "out"
-#define FIELD_IMG "img"
-#define FIELD_TERRAIN "terrain"
-#define FIELD_CLUTTER "clutter"
+#define FIELD_OUT "out_rf"
+#define FIELD_IMG "out_img"
+#define FIELD_IMG_SIZE "out_img_size"
+#define FIELD_IMG_COLORMAP "out_img_colormap"
+#define FIELD_IMG_SCALE_MIN "out_img_scale_min"
+#define FIELD_IMG_SCALE_MAX "out_img_scale_max"
+#define FIELD_IMG_DATA_TYPE "out_img_data_type"
+#define FIELD_IMG_DATA_TYPE_S_UNITS "s-units"
+#define FIELD_IMG_DATA_TYPE_LOSS "loss"
+#define FIELD_TERRAIN "data_terrain"
+#define FIELD_CLUTTER "data_clutter"
 
 int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *parameters, char *field, char *value);
 
@@ -62,6 +70,12 @@ void jobfile_zero(job_parameters_t *job_parameters)
     job_parameters->xres = NAN;
     job_parameters->ares = NAN;
     job_parameters->threads = 1;
+
+    job_parameters->img_size = 256;
+    job_parameters->img_colormap = COLORMAP_JET;
+    job_parameters->img_scale_min = 1.0;
+    job_parameters->img_scale_max = 9.0;
+    job_parameters->img_data_type = IMG_DATA_TYPE_S_UNITS;
 
     memset(job_parameters->out, 0, sizeof(job_parameters->out));
     memset(job_parameters->img, 0, sizeof(job_parameters->img));
@@ -225,6 +239,28 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
             return EXIT_FAILURE;
         }
         strncpy(job_parameters->img, value, MAX_VALUE_LENGTH);
+    }
+    else if (strcmp(field, FIELD_IMG_SIZE) == EQUAL)
+        job_parameters->img_size = atoi(value);
+    else if (strcmp(field, FIELD_IMG_COLORMAP) == EQUAL)
+        job_parameters->img_colormap = cmap_parse(value);
+    else if (strcmp(field, FIELD_IMG_SCALE_MIN) == EQUAL)
+        job_parameters->img_scale_min = atof(value);
+    else if (strcmp(field, FIELD_IMG_SCALE_MAX) == EQUAL)
+        job_parameters->img_scale_max = atof(value);
+    else if (strcmp(field, FIELD_IMG_DATA_TYPE) == EQUAL)
+    {
+        for (int i = 0; i < strlen(value); i++)
+            value[i] = tolower(value[i]);
+        if (strcmp(value, FIELD_IMG_DATA_TYPE_S_UNITS) == EQUAL)
+            job_parameters->img_data_type = IMG_DATA_TYPE_S_UNITS;
+        else if (strcmp(value, FIELD_IMG_DATA_TYPE_LOSS) == EQUAL)
+            job_parameters->img_data_type = IMG_DATA_TYPE_LOSS;
+        else
+        {
+            fprintf(stderr, "_jobfile_set_field: img_data_type  must be either 's-units' or 'loss', not %s\n", value);
+            return EXIT_FAILURE;
+        }
     }
     else if (strcmp(field, FIELD_TERRAIN) == EQUAL)
     {

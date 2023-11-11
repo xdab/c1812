@@ -36,6 +36,8 @@ void *p2a_thread_func(void *argument);
 int malloc_caches(c1812_parameters_t *parameters, int n);
 void clear_caches(c1812_parameters_t *parameters, int n);
 void free_caches(c1812_parameters_t *parameters);
+int output_image(job_parameters_t *job, double **results, double *angles, int angles_count, int n);
+int output_rf_file(job_parameters_t *job, double **results, double *angles, int angles_count, int n);
 
 int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
@@ -134,105 +136,19 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
     bool generate_img = (strlen(job->img) > 0);
     if (generate_img)
     {
-        const int N = 800;
-        const int W = N;
-        const int H = N;
-
-        image_t image;
-        if (image_create(&image, W, H) != EXIT_SUCCESS)
+        if (output_image(job, results, angles, angles_count, n) != EXIT_SUCCESS)
         {
-            fprintf(stderr, "p2a: image_create()\n");
+            fprintf(stderr, "p2a: output_image()\n");
             return EXIT_FAILURE;
         }
-
-        for (int im_y = 0; im_y < H; im_y++)
-        {
-            double y = job->txy + job->radius * (im_y - H / 2) / (H / 2);
-
-            for (int im_x = 0; im_x < W; im_x++)
-            {
-                double x = job->txx + job->radius * (im_x - W / 2) / (W / 2);
-
-                double distance = c_sqrt(c_pow(x - job->txx, 2) + c_pow(y - job->txy, 2));
-                if (distance > job->radius)
-                    continue;
-
-                double angle = c_atan2_exact(y - job->txy, x - job->txx) * 180.0 / PI;
-                if (angle < 0.0)
-                    angle += 360.0;
-
-                int ai = (int)c_round(angle / job->ares);
-                if (ai >= angles_count)
-                    ai = 0;
-
-                int ni = (int)c_floor(distance / (job->xres * KM_M));
-                if (ni >= n)
-                    ni = n - 1;
-                if (ni < 3)
-                    ni = 3;
-
-                double loss = results[ai][ni];
-
-                // Translate loss to received signal strength
-                double Prx = link_budget(
-                    job->txpwr,
-                    job->txgain,
-                    job->rxgain,
-                    loss);
-
-                // Translate received signal strength to S-units
-                s_unit_t S;
-                dBm_to_s_unit_hf(Prx, &S);
-
-                double decimal_S = S.full_units + S.dB_over / 6.0;
-                double nearest_S = (c_floor(decimal_S) - 1) / (9 - 1);
-
-                int rgb = cmap_inferno_get(nearest_S);
-                unsigned char r, g, b;
-                unpack_rgb(rgb, &r, &g, &b);
-
-                image_set(&image, im_x, im_y, r, g, b);
-            }
-        }
-
-        if (image_write(&image, job->img) != EXIT_SUCCESS)
-        {
-            fprintf(stderr, "p2a: image_write()\n");
-            return EXIT_FAILURE;
-        }
-
-        image_free(&image);
     }
 
     bool generate_out = (strlen(job->out) > 0);
     if (generate_out)
     {
-        outfile_t outfile;
-        if (outfile_open(&outfile, job->out) != EXIT_SUCCESS)
+        if (output_rf_file(job, results, angles, angles_count, n) != EXIT_SUCCESS)
         {
-            fprintf(stderr, "p2a: outfile_open()\n");
-            return EXIT_FAILURE;
-        }
-
-        int ret = outfile_write_header(&outfile, job->txx, job->txy, job->radius, job->ares, n);
-        if (ret != EXIT_SUCCESS)
-        {
-            fprintf(stderr, "p2a: outfile_write_header()\n");
-            return EXIT_FAILURE;
-        }
-
-        for (int ai = 0; ai < angles_count; ai++)
-        {
-            if (outfile_write_ray(&outfile, results[ai]) != EXIT_SUCCESS)
-            {
-                fprintf(stderr, "p2a: outfile_write_ray() angle=%.1f\n", angles[ai]);
-                return EXIT_FAILURE;
-            }
-        }
-
-        if (outfile_close(&outfile) != EXIT_SUCCESS)
-        {
-            fprintf(stderr, "p2a: outfile_close()\n");
+            fprintf(stderr, "p2a: output_rf_file()\n");
             return EXIT_FAILURE;
         }
     }
@@ -244,6 +160,120 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
     free(parameters->d);
 
     return EXIT_SUCCESS;
+}
+
+int output_image(job_parameters_t *job, double **results, double *angles, int angles_count, int n)
+{
+    int W = job->img_size;
+    int H = job->img_size;
+
+    image_t image;
+    if (image_create(&image, W, H) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "output_image: image_create()\n");
+        return EXIT_FAILURE;
+    }
+
+    for (int im_y = 0; im_y < H; im_y++)
+    {
+        double y = job->txy + job->radius * (im_y - H / 2) / (H / 2);
+
+        for (int im_x = 0; im_x < W; im_x++)
+        {
+            double x = job->txx + job->radius * (im_x - W / 2) / (W / 2);
+
+            double distance = c_sqrt(c_pow(x - job->txx, 2) + c_pow(y - job->txy, 2));
+            if (distance > job->radius)
+                continue;
+
+            double angle = c_atan2_exact(y - job->txy, x - job->txx) * 180.0 / PI;
+            if (angle < 0.0)
+                angle += 360.0;
+
+            int ai = (int)c_round(angle / job->ares);
+            if (ai >= angles_count)
+                ai = 0;
+
+            int ni = (int)c_floor(distance / (job->xres * KM_M));
+            if (ni >= n)
+                ni = n - 1;
+            if (ni < 3)
+                ni = 3;
+
+            double loss = results[ai][ni];
+            double value = NAN;
+
+            switch (job->img_data_type)
+            {
+            case IMG_DATA_TYPE_S_UNITS:
+            {
+                double rx_pwr_dbm = link_budget(job->txpwr, job->txgain, job->rxgain, loss);
+                s_unit_t S;
+                dBm_to_s_unit_hf(rx_pwr_dbm, &S);
+                value = S.full_units + S.dB_over / 6.0;
+            }
+            break;
+            case IMG_DATA_TYPE_LOSS:
+                value = loss;
+                break;
+            default:
+                fprintf(stderr, "output_image: unknown image data type\n");
+                return EXIT_FAILURE;
+            }
+
+            value = (value - job->img_scale_min) / (job->img_scale_max - job->img_scale_min);
+
+            int rgb = cmap_get(job->img_colormap, value);
+            unsigned char r, g, b;
+            unpack_rgb(rgb, &r, &g, &b);
+
+            if (image_set(&image, im_x, im_y, r, g, b) != EXIT_SUCCESS)
+            {
+                fprintf(stderr, "output_image: image_set()\n");
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
+    if (image_write(&image, job->img) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "output_image: image_write()\n");
+        return EXIT_FAILURE;
+    }
+
+    image_free(&image);
+    return EXIT_SUCCESS;
+}
+
+int output_rf_file(job_parameters_t *job, double **results, double *angles, int angles_count, int n)
+{
+    outfile_t outfile;
+    if (outfile_open(&outfile, job->out) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "output_rf_file: outfile_open()\n");
+        return EXIT_FAILURE;
+    }
+
+    if (outfile_write_header(&outfile, job->txx, job->txy, job->radius, job->ares, n) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "output_rf_file: outfile_write_header()\n");
+        return EXIT_FAILURE;
+    }
+
+    for (int ai = 0; ai < angles_count; ai++)
+    {
+        if (outfile_write_ray(&outfile, results[ai]) != EXIT_SUCCESS)
+        {
+            fprintf(stderr, "output_rf_file: outfile_write_ray() angle=%.1f\n", angles[ai]);
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (outfile_close(&outfile) != EXIT_SUCCESS)
+    {
+        fprintf(stderr, "output_rf_file: outfile_close()\n");
+        return EXIT_FAILURE;
+    }
 }
 
 void *p2a_thread_func(void *argument)
