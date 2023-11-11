@@ -1,9 +1,8 @@
 #include "clutter_file.h"
 #include "nneighbor.h"
-
+#include "c1812/custom_math.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 void cf_zero(clutter_file_t *ctfile)
 {
@@ -181,5 +180,5 @@ uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y)
 	// Find the height at the point
 	double Ct = Ct1 + (Ct2 - Ct1) * (y - y1) / (y2 - y1);
 
-	return (uint16_t)round(Ct);
+	return (uint16_t)c_round(Ct);
 }

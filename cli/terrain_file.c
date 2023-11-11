@@ -1,10 +1,10 @@
 #include "terrain_file.h"
 #include "vec.h"
 #include "nneighbor.h"
+#include "c1812/custom_math.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define READ "r"
 #define READ_BINARY "rb"

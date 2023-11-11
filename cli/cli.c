@@ -2,6 +2,7 @@
 #include "c1812/calculate.h"
 #include "c1812/rf.h"
 #include "c1812/sunit.h"
+#include "c1812/custom_math.h"
 
 #include "jobfile.h"
 #include "terrain_file.h"
@@ -13,7 +14,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <pthread.h>
 
 #define MIN_ARGS 2
@@ -74,7 +74,7 @@ int main(const int argc, const char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (!isnan(job_parameters.rxx) && !isnan(job_parameters.rxy))
+    if (!c_isnan(job_parameters.rxx) && !c_isnan(job_parameters.rxy))
     {
         // Point-to-point calculation
         if (p2p(&job_parameters, &parameters, terrain_files, clutter_files) != EXIT_SUCCESS)
@@ -104,21 +104,21 @@ int main(const int argc, const char *argv[])
 
 int validate_job_parameters(job_parameters_t *job_parameters)
 {
-    if (isnan(job_parameters->txx) || isnan(job_parameters->txy))
+    if (c_isnan(job_parameters->txx) || c_isnan(job_parameters->txy))
     {
         fprintf(stderr, "validate_job_parameters: txx and txy are required\n");
         return EXIT_FAILURE;
     }
 
-    if (!isnan(job_parameters->txpwr) && job_parameters->txpwr <= 0.0)
+    if (!c_isnan(job_parameters->txpwr) && job_parameters->txpwr <= 0.0)
     {
         fprintf(stderr, "validate_job_parameters: txpwr must be positive\n");
         return EXIT_FAILURE;
     }
 
-    if (!isnan(job_parameters->rxx) && !isnan(job_parameters->rxy))
+    if (!c_isnan(job_parameters->rxx) && !c_isnan(job_parameters->rxy))
     {
-        if (isnan(job_parameters->radius))
+        if (c_isnan(job_parameters->radius))
         {
             fprintf(stderr, "validate_job_parameters: radius is required for p2a calculation\n");
             return EXIT_FAILURE;
@@ -129,7 +129,7 @@ int validate_job_parameters(job_parameters_t *job_parameters)
             return EXIT_FAILURE;
         }
 
-        if (isnan(job_parameters->ares))
+        if (c_isnan(job_parameters->ares))
         {
             fprintf(stderr, "validate_job_parameters: ares is required for p2a calculation\n");
             return EXIT_FAILURE;
@@ -141,7 +141,7 @@ int validate_job_parameters(job_parameters_t *job_parameters)
         }
     }
 
-    if (isnan(job_parameters->xres))
+    if (c_isnan(job_parameters->xres))
     {
         fprintf(stderr, "validate_job_parameters: xres is required\n");
         return EXIT_FAILURE;

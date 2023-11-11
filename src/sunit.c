@@ -1,5 +1,5 @@
 #include "sunit.h"
-#include <math.h>
+#include "custom_math.h"
 
 const double S_UNIT_STEP_DBM = 6;
 
@@ -23,7 +23,7 @@ void dBm_to_s_unit(double dbm, s_unit_t *s_unit, double s9, double s1)
 	}
 	else
 	{
-		s_unit->full_units = 1 + (int)floor((dbm - s1) / S_UNIT_STEP_DBM);
+		s_unit->full_units = 1 + (int)c_floor((dbm - s1) / S_UNIT_STEP_DBM);
 		s_unit->dB_over = dbm - (s1 + (s_unit->full_units - 1) * S_UNIT_STEP_DBM);
 	}
 }

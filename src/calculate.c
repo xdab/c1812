@@ -8,9 +8,8 @@
 #include "inv_cum_norm.h"
 #include "tl_anomalous.h"
 #include "tl_tropo.h"
-#include "pow.h"
+#include "custom_math.h"
 
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -197,14 +196,6 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 {
 	results->error = RESULTS_ERR_UNKNOWN;
 
-	// Validate parameters
-	c1812_parameters_error_t param_err = c1812_validate_parameters(parameters);
-	if (param_err != PARAM_ERR_NONE)
-	{
-		results->error = RESULTS_ERR_PARAMETERS;
-		return;
-	}
-
 	c1812_calculate_ctx_t ctx;
 	copy_parameters_to_ctx(parameters, &ctx);
 
@@ -303,13 +294,13 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	// distance Eq (57)
 	const double THETA = 0.3;
 	const double KSI = 0.8;
-	double Fj = 1.0 - 0.5 * (1.0 + tanh(3.0 * KSI * (ctx.theta - THETA) / THETA));
+	double Fj = 1.0 - 0.5 * (1.0 + c_tanh(3.0 * KSI * (ctx.theta - THETA) / THETA));
 
 	// Calculate an interpolation factor, Fk, to take account of the great
 	// circle path distance:
 	const double dsw = 20;
 	const double kappa = 0.5;
-	double Fk = 1.0 - 0.5 * (1.0 + tanh(3.0 * kappa * (ctx.dtot - dsw) / dsw)); // eq (58)
+	double Fk = 1.0 - 0.5 * (1.0 + c_tanh(3.0 * kappa * (ctx.dtot - dsw) / dsw)); // eq (58)
 
 	// Calculate the transmission loss due to anomalous propagation
 	tl_anomalous_output_t tl_anomalous_output;
@@ -320,7 +311,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	double Lba = tl_anomalous_output.Lba;
 
 	const double eta = 2.5;
-	double Lminbap = eta * log(exp(Lba / eta) + exp(pl_los_output.Lb0p / eta)); // eq (60)
+	double Lminbap = eta * c_log(c_exp(Lba / eta) + c_exp(pl_los_output.Lb0p / eta)); // eq (60)
 	double Lbda = Lbd;
 	if (Lminbap <= Lbd)
 		Lbda = Lminbap + (Lbd - Lminbap) * Fk;
@@ -332,7 +323,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 	copy_ctx_to_tl_tropo_input(&ctx, &tl_tropo_input);
 	tl_tropo(&tl_tropo_input, &tl_tropo_output);
 
-	double Lbc = -5 * log10(pow2(10, -0.2 * tl_tropo_output.Lbs) + pow2(10, -0.2 * Lbam));
+	double Lbc = -5 * c_log10(c_pow(10, -0.2 * tl_tropo_output.Lbs) + c_pow(10, -0.2 * Lbam));
 
 	// Location variability of losses (Section 4.8)
 	double Lloc = 0.0; // outdoors only (67a)
@@ -346,7 +337,7 @@ void c1812_calculate(c1812_parameters_t *parameters, c1812_results_t *results)
 
 	// Basic transmission loss not exceeded for p% time and pL% locations
 	// (Sections 4.8 and 4.9) not implemented
-	results->Lb = fmax(pl_los_output.Lb0p, Lbc + Lloc); // eq (69)
+	results->Lb = c_max(pl_los_output.Lb0p, Lbc + Lloc); // eq (69)
 	results->error = RESULTS_ERR_NONE;
 
 #if DEBUG == 1

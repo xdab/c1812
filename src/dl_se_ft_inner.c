@@ -1,24 +1,23 @@
 #include "dl_se_ft_inner.h"
-#include "pow.h"
-#include <math.h>
+#include "custom_math.h"
 
 // Eq (30)
 #define BETA_DFT_FORMULA(k) ((1 + k * k * (1.6 + 0.67 * k * k)) / (1 + k * k * (4.5 + 1.53 * k * k)))
 
 // Eq (31)
-#define X_FORMULA(beta_dft, adft, f, d) (21.88 * beta_dft * cbrt(f / (adft * adft)) * d)
+#define X_FORMULA(beta_dft, adft, f, d) (21.88 * beta_dft * c_cbrt(f / (adft * adft)) * d)
 
 // Eq (32ab)
-#define Y_FORMULA(beta_dft, adft, f, h) (0.9575 * beta_dft * cbrt(f * f / adft) * h)
+#define Y_FORMULA(beta_dft, adft, f, h) (0.9575 * beta_dft * c_cbrt(f * f / adft) * h)
 
 void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *output)
 {
     // Normalized factor for surface admittance for horizontal (0) and vertical (1) polarizations
     double K[2];
 
-    K[0] = 0.036 * pow2(input->adft * input->f, -1.0 / 3);
-    K[0] *= pow2(pow2(input->epsr - 1, 2) + pow2(18 * input->sigma / input->f, 2), -1.0 / 4); // Eq (29a)
-    K[1] = K[0] * sqrt(input->epsr * input->epsr + pow2(18.0 * input->sigma / input->f, 2));  // Eq (29b)
+    K[0] = 0.036 * c_pow(input->adft * input->f, -1.0 / 3);
+    K[0] *= c_pow(c_pow(input->epsr - 1, 2) + c_pow(18 * input->sigma / input->f, 2), -1.0 / 4); // Eq (29a)
+    K[1] = K[0] * c_sqrt(input->epsr * input->epsr + c_pow(18.0 * input->sigma / input->f, 2));  // Eq (29b)
 
     // Earth ground/polarization parameter
     double beta_dft[2];
@@ -47,9 +46,9 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
     for (int ii = 0; ii < 2; ii++)
     {
         if (X[ii] >= 1.6)
-            Fx[ii] = 11 + 10 * log10(X[ii]) - 17.6 * X[ii];
+            Fx[ii] = 11 + 10 * c_log10(X[ii]) - 17.6 * X[ii];
         else
-            Fx[ii] = -20 * log10(X[ii]) - 5.6488 * pow2(X[ii], 1.425); // Eq (33)
+            Fx[ii] = -20 * c_log10(X[ii]) - 5.6488 * c_pow(X[ii], 1.425); // Eq (33)
     }
 
     double Bt[2];
@@ -60,17 +59,17 @@ void dl_se_ft_inner(dl_se_ft_inner_input_t *input, dl_se_ft_inner_output_t *outp
         Br[ii] = beta_dft[ii] * Yr[ii]; // Eq (35)
 
         if (Bt[ii] > 2)
-            GYt[ii] = 17.6 * sqrt(Bt[ii] - 1.1) - 5 * log10(Bt[ii] - 1.1) - 8;
+            GYt[ii] = 17.6 * c_sqrt(Bt[ii] - 1.1) - 5 * c_log10(Bt[ii] - 1.1) - 8;
         else
-            GYt[ii] = 20 * log10(Bt[ii] + 0.1 * pow2(Bt[ii], 3));
+            GYt[ii] = 20 * c_log10(Bt[ii] + 0.1 * c_pow(Bt[ii], 3));
 
         if (Br[ii] > 2)
-            GYr[ii] = 17.6 * sqrt(Br[ii] - 1.1) - 5 * log10(Br[ii] - 1.1) - 8;
+            GYr[ii] = 17.6 * c_sqrt(Br[ii] - 1.1) - 5 * c_log10(Br[ii] - 1.1) - 8;
         else
-            GYr[ii] = 20 * log10(Br[ii] + 0.1 * pow2(Br[ii], 3));
+            GYr[ii] = 20 * c_log10(Br[ii] + 0.1 * c_pow(Br[ii], 3));
 
-        GYr[ii] = fmax(GYr[ii], 2 + 20 * log10(K[ii]));
-        GYt[ii] = fmax(GYt[ii], 2 + 20 * log10(K[ii]));
+        GYr[ii] = c_max(GYr[ii], 2 + 20 * c_log10(K[ii]));
+        GYt[ii] = c_max(GYt[ii], 2 + 20 * c_log10(K[ii]));
     }
 
     // Eq (36)

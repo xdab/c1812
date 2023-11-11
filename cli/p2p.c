@@ -1,10 +1,9 @@
 #include "p2p.h"
 #include "c1812/parameters.h"
 #include "c1812/calculate.h"
-#include "c1812/pow.h"
+#include "c1812/custom_math.h"
 #include "c1812/sunit.h"
 #include "c1812/rf.h"
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -63,9 +62,9 @@ int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters
     double y1 = job_parameters->txy;
     double x2 = job_parameters->rxx;
     double y2 = job_parameters->rxy;
-    double distance = sqrt(pow2((x2 - x1) / KM_M, 2) + pow2((y2 - y1) / KM_M, 2)); // [km]
+    double distance = c_sqrt(c_pow((x2 - x1) / KM_M, 2) + c_pow((y2 - y1) / KM_M, 2)); // [km]
 
-    int n = (int)ceil(distance / job_parameters->xres);
+    int n = (int)c_ceil(distance / job_parameters->xres);
 
     double *d = malloc(n * sizeof(double));
     if (d == NULL)

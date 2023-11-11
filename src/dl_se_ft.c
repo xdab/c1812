@@ -1,6 +1,5 @@
 #include "dl_se_ft.h"
 #include "dl_se_ft_inner.h"
-#include <math.h>
 
 void dl_se_ft(dl_se_ft_input_t *input, dl_se_ft_output_t *output)
 {

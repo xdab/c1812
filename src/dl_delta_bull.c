@@ -1,7 +1,7 @@
 #include "dl_delta_bull.h"
 #include "dl_bull.h"
 #include "dl_se.h"
-#include <math.h>
+#include "custom_math.h"
 #include <stdlib.h>
 
 void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
@@ -61,6 +61,6 @@ void dl_delta_bull(dl_delta_bull_input_t *input, dl_delta_bull_output_t *output)
     // Diffraction loss for the general path is now given by
     // Ld(1) = Lbulla + max(Ldsph(1) - Lbulls, 0);  % eq (39)
     // Ld(2) = Lbulla + max(Ldsph(2) - Lbulls, 0);  % eq (39)
-    output->Ld[0] = output->Lbulla + fmax(output->Ldsph[0] - output->Lbulls, 0);
-    output->Ld[1] = output->Lbulla + fmax(output->Ldsph[1] - output->Lbulls, 0);
+    output->Ld[0] = output->Lbulla + c_max(output->Ldsph[0] - output->Lbulls, 0);
+    output->Ld[1] = output->Lbulla + c_max(output->Ldsph[1] - output->Lbulls, 0);
 }

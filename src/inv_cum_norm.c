@@ -1,9 +1,9 @@
 #include "inv_cum_norm.h"
-#include <math.h>
+#include "custom_math.h"
 
 double T(double y)
 {
-    return sqrt(-2 * log(y));
+    return c_sqrt(-2 * c_log(y));
 }
 
 double C(double z)

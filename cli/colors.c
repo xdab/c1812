@@ -1,5 +1,5 @@
 #include "colors.h"
-#include <math.h>
+#include "c1812/custom_math.h"
 
 int pack_rgb(unsigned char r, unsigned char g, unsigned char b)
 {
@@ -15,13 +15,6 @@ void unpack_rgb(int rgb, unsigned char *r, unsigned char *g, unsigned char *b)
 
 int cmap_inferno_get(double v)
 {
-	if (v < 0.0)
-		v = 0.0;
-	else if (v > 1.0)
-		v = 1.0;
-	else if (isnan(v))
-		return 0x000000;
-
 	const double INFERNO[256][3] = {
 		{0.001462, 0.000466, 0.013866},
 		{0.002267, 0.001270, 0.018570},
@@ -278,8 +271,14 @@ int cmap_inferno_get(double v)
 		{0.971162, 0.985282, 0.602154},
 		{0.976511, 0.989753, 0.616760},
 		{0.982257, 0.994109, 0.631017},
-		{0.988362, 0.998364, 0.644924}
-	};
+		{0.988362, 0.998364, 0.644924}};
+
+	if (v < 0.0)
+		v = 0.0;
+	else if (v > 1.0)
+		v = 1.0;
+	else if (c_isnan(v))
+		return 0x000000;
 
 	double r, g, b;
 	int i = (int)(v * 255.0);

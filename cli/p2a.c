@@ -1,5 +1,4 @@
 #include "p2a.h"
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +10,7 @@
 #include "c1812/calculate.h"
 #include "c1812/sunit.h"
 #include "c1812/rf.h"
+#include "c1812/custom_math.h"
 
 #define KM_M 1000.0
 #define M_CM 100.0
@@ -39,7 +39,7 @@ void free_caches(c1812_parameters_t *parameters);
 
 int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs)
 {
-    int n = (int)ceil(job->radius / (job->xres * KM_M));
+    int n = (int)c_ceil(job->radius / (job->xres * KM_M));
     parameters->n = n;
     parameters->d = malloc(n * sizeof(double));
     if (parameters->d == NULL)
@@ -51,7 +51,7 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
     for (int i = 0; i < n; i++)
         parameters->d[i] = job->radius * i / (KM_M * (n - 1));
 
-    int angles_count = (int)ceil(360.0 / job->ares);
+    int angles_count = (int)c_ceil(360.0 / job->ares);
     double *angles = malloc(angles_count * sizeof(double));
     if (angles == NULL)
     {
@@ -153,19 +153,19 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
             {
                 double x = job->txx + job->radius * (im_x - W / 2) / (W / 2);
 
-                double distance = sqrt(pow(x - job->txx, 2) + pow(y - job->txy, 2));
+                double distance = c_sqrt(c_pow(x - job->txx, 2) + c_pow(y - job->txy, 2));
                 if (distance > job->radius)
                     continue;
 
-                double angle = atan2(y - job->txy, x - job->txx) * 180.0 / M_PI;
+                double angle = c_atan2_exact(y - job->txy, x - job->txx) * 180.0 / PI;
                 if (angle < 0.0)
                     angle += 360.0;
 
-                int ai = (int)round(angle / job->ares);
+                int ai = (int)c_round(angle / job->ares);
                 if (ai >= angles_count)
                     ai = 0;
 
-                int ni = (int)floor(distance / (job->xres * KM_M));
+                int ni = (int)c_floor(distance / (job->xres * KM_M));
                 if (ni >= n)
                     ni = n - 1;
                 if (ni < 3)
@@ -185,7 +185,7 @@ int p2a(job_parameters_t *job, c1812_parameters_t *parameters, terrain_file_t *t
                 dBm_to_s_unit_hf(Prx, &S);
 
                 double decimal_S = S.full_units + S.dB_over / 6.0;
-                double nearest_S = (floor(decimal_S) - 1) / (9 - 1);
+                double nearest_S = (c_floor(decimal_S) - 1) / (9 - 1);
 
                 int rgb = cmap_inferno_get(nearest_S);
                 unsigned char r, g, b;
@@ -290,8 +290,8 @@ void *p2a_thread_func(void *argument)
     {
         angle = thread_argument->angles[ai];
 
-        x2 = job->txx + job->radius * cos(angle * M_PI / 180.0);
-        y2 = job->txy + job->radius * sin(angle * M_PI / 180.0);
+        x2 = job->txx + job->radius * c_cos(angle * PI / 180.0);
+        y2 = job->txy + job->radius * c_sin(angle * PI / 180.0);
 
         for (int i = 0; i < n; i++)
         {
