@@ -1,4 +1,5 @@
 #include "colors.h"
+#include <math.h>
 
 int pack_rgb(unsigned char r, unsigned char g, unsigned char b)
 {
@@ -18,6 +19,8 @@ int cmap_inferno_get(double v)
 		v = 0.0;
 	else if (v > 1.0)
 		v = 1.0;
+	else if (isnan(v))
+		return 0x000000;
 
 	const double INFERNO[256][3] = {
 		{0.001462, 0.000466, 0.013866},

@@ -39,6 +39,7 @@
 #define FIELD_ARES "ares"
 #define FIELD_THREADS "threads"
 #define FIELD_OUT "out"
+#define FIELD_IMG "img"
 #define FIELD_TERRAIN "terrain"
 #define FIELD_CLUTTER "clutter"
 
@@ -63,6 +64,7 @@ void jobfile_zero(job_parameters_t *job_parameters)
     job_parameters->threads = 1;
 
     memset(job_parameters->out, 0, sizeof(job_parameters->out));
+    memset(job_parameters->img, 0, sizeof(job_parameters->img));
     memset(job_parameters->terrain, 0, sizeof(job_parameters->terrain));
     memset(job_parameters->clutter, 0, sizeof(job_parameters->clutter));
 }
@@ -214,6 +216,15 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
             return EXIT_FAILURE;
         }
         strncpy(job_parameters->out, value, MAX_VALUE_LENGTH);
+    }
+    else if (strcmp(field, FIELD_IMG) == EQUAL)
+    {
+        if (strlen(job_parameters->img) > 0)
+        {
+            fprintf(stderr, "_jobfile_set_field: img already set\n");
+            return EXIT_FAILURE;
+        }
+        strncpy(job_parameters->img, value, MAX_VALUE_LENGTH);
     }
     else if (strcmp(field, FIELD_TERRAIN) == EQUAL)
     {

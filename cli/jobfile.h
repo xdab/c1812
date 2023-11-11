@@ -28,6 +28,7 @@ typedef struct
     int threads;   // Number of threads to use, default 1
 
     char out[MAX_VALUE_LENGTH];                        // Output file path
+    char img[MAX_VALUE_LENGTH];                        // Output image file path
     char terrain[MAX_TERRAIN_FILES][MAX_VALUE_LENGTH]; // Terrain file paths
     char clutter[MAX_CLUTTER_FILES][MAX_VALUE_LENGTH]; // Clutter file paths
 
