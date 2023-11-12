@@ -76,4 +76,15 @@ double tf_get_nn(terrain_file_t *tf, const double x, const double y);
  */
 double tf_get_bilinear(terrain_file_t *tf, const double x, const double y);
 
+/**
+ * @brief Returns the bicubically interpolated height to the given x, y coordinates.
+ *
+ * @param tf The terrain_file_t structure to search.
+ * @param x The x coordinate.
+ * @param y The y coordinate.
+ *
+ * @return h - The bicubically interpolated height value.
+ */
+double tf_get_bicubic(terrain_file_t *tf, const double x, const double y);
+
 #endif

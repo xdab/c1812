@@ -14,6 +14,8 @@ typedef enum
 {
     IMG_DATA_TYPE_S_UNITS,
     IMG_DATA_TYPE_LOSS,
+    IMG_DATA_TYPE_TERRAIN,
+    IMG_DATA_TYPE_CLUTTER,
 } job_parameters_img_data_t;
 
 typedef struct

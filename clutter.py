@@ -17,12 +17,12 @@ if __name__ == '__main__':
     DESTINATION_CF_FILE = "mazowieckie.tif.cf"
     DESTINATION_CRS = 'EPSG:2180'
 
-    OVERSAMPLE = 2
-    SMOOTHING = 3.0
+    OVERSAMPLE = 3
+    SMOOTHING = OVERSAMPLE * 2
 
     CLUTTER_HEIGHT_MAP = {
         1: 0,  # Water
-        2: 6,  # Trees
+        2: 5,  # Trees
         4: 0.1,  # Flooded vegetation
         5: 0.1,  # Crops
         7: 10,  # Built area
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             left=left, right=right, bottom=bottom, top=top,
             dst_width=x_size * OVERSAMPLE,
             dst_height=y_size * OVERSAMPLE)
-        
+
         kwargs = src.meta.copy()
         kwargs.update({
             'crs': DESTINATION_CRS,
@@ -86,10 +86,35 @@ if __name__ == '__main__':
     print("TIF file created")
 
     destination = HEIGHT_MAPPING(destination)
+    # xlim = (950 * OVERSAMPLE, 1050 * OVERSAMPLE)
+    # ylim = (1150 * OVERSAMPLE, 1250 * OVERSAMPLE)
+    # destination = destination[ylim[0]:ylim[1], xlim[0]:xlim[1]]
 
     sigma_y = sigma_x = SMOOTHING
     sigma = [sigma_y, sigma_x]
-    destination = sp.ndimage.filters.gaussian_filter(destination, sigma, mode='constant')
+
+    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    # cmap = plt.get_cmap('gray')
+
+    # ref = np.copy(destination)
+    # ax1.imshow(destination, cmap=cmap)
+
+    destination = sp.ndimage.filters.percentile_filter(
+        destination, 30, size=int(SMOOTHING), mode='constant')
+
+    destination = sp.ndimage.filters.gaussian_filter(
+        destination, SMOOTHING, mode='constant')
+
+    destination = sp.ndimage.filters.percentile_filter(
+        destination, 15, size=int(SMOOTHING), mode='constant')
+
+    # ax2.imshow(destination, cmap=cmap)
+
+    # ax3handle = ax3.imshow(
+    #     destination - ref, cmap='bwr', vmin=-10, vmax=10)
+
+    # plt.show()
+    # quit()
 
     new_y = np.linspace(y[0], y[-1], y_size * OVERSAMPLE, dtype=np.float64)
     new_x = np.linspace(x[0], x[-1], x_size * OVERSAMPLE, dtype=np.float64)
@@ -100,7 +125,7 @@ if __name__ == '__main__':
         new_x.tofile(dst)
         for iy in range(y_size * OVERSAMPLE):
             row = destination[y_size * OVERSAMPLE - iy - 1]
-            row_heights = np.round(row * 100)  # cm
-            row_heights.astype(np.uint16).tofile(dst)
+            row_heights = np.round(row * 10)  # dm
+            row_heights.astype(np.uint8).tofile(dst)
 
     print("CF file created")

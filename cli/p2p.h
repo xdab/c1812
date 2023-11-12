@@ -1,10 +1,7 @@
 #ifndef P2P_H
 #define P2P_H
 
-#include "jobfile.h"
-#include "c1812/parameters.h"
-#include "terrain_file.h"
-#include "clutter_file.h"
+#include "p2pa_common.h"
 
 /**
  * @brief Point-to-point calculation

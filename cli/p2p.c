@@ -1,14 +1,4 @@
 #include "p2p.h"
-#include "c1812/parameters.h"
-#include "c1812/calculate.h"
-#include "c1812/custom_math.h"
-#include "c1812/sunit.h"
-#include "c1812/rf.h"
-#include <stdlib.h>
-#include <stdio.h>
-
-#define KM_M 1000.0
-#define M_CM 100.0
 
 int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters, terrain_file_t *tfs, clutter_file_t *cfs);
 
@@ -95,8 +85,8 @@ int p2p_prepare(job_parameters_t *job_parameters, c1812_parameters_t *parameters
         double xi = x1 + (x2 - x1) * i / (n - 1);
         double yi = y1 + (y2 - y1) * i / (n - 1);
         d[i] = distance * i / (n - 1);
-        h[i] = tf_get_bilinear(&tfs[0], xi, yi);
-        Ct[i] = (double)cf_get_bilinear(&cfs[0], xi, yi) / M_CM;
+        h[i] = tf_interpolation_func(&tfs[0], xi, yi);
+        Ct[i] = cf_interpolation_func(&cfs[0], xi, yi) / M_DM;
     }
 
     parameters->n = n;

@@ -428,18 +428,108 @@ double tf_get_bilinear(terrain_file_t *tf, const double x, const double y)
         return NAN;
     double y2 = tf->y[y2_index];
 
-    // Find the heights at the corners of the rectangle
     double h11 = tf->h[y1_index][x1_index];
     double h12 = tf->h[y1_index][x2_index];
     double h21 = tf->h[y2_index][x1_index];
     double h22 = tf->h[y2_index][x2_index];
 
-    // Find the heights at the edges of the rectangle
     double h1 = h11 + (h12 - h11) * (x - x1) / (x2 - x1);
     double h2 = h21 + (h22 - h21) * (x - x1) / (x2 - x1);
 
-    // Find the height at the point
     double h = h1 + (h2 - h1) * (y - y1) / (y2 - y1);
+
+    return h;
+}
+
+double _tf_cubic(double A, double B, double C, double D, double x)
+{
+    float p = -A / 2 + (3 * B) / 2 - (3 * C) / 2 + D / 2;
+    float q = A - (5 * B) / 2 + 2 * C - D / 2;
+    float r = -A / 2 + C / 2;
+    float s = B;
+    return x * (x * (p * x + q) + r) + s;
+}
+
+double tf_get_bicubic(terrain_file_t *tf, const double x, const double y)
+{
+    int x2_index;
+    double x2 = nneighbor(tf->x, tf->x_size, x, &x2_index);
+    if (x2 > x)
+    {
+        x2_index--;
+        if (x2_index < 0)
+            return NAN;
+        x2 = tf->x[x2_index];
+    }
+
+    int x1_index = x2_index - 1;
+    if (x1_index < 0)
+        return NAN;
+    double x1 = tf->x[x1_index];
+
+    int x3_index = x2_index + 1;
+    if (x3_index >= tf->x_size)
+        return NAN;
+    double x3 = tf->x[x3_index];
+
+    int x4_index = x3_index + 1;
+    if (x4_index >= tf->x_size)
+        return NAN;
+    double x4 = tf->x[x4_index];
+
+    int y2_index;
+    double y2 = nneighbor(tf->y, tf->y_size, y, &y2_index);
+    if (y2 > y)
+    {
+        y2_index--;
+        if (y2_index < 0)
+            return NAN;
+        y2 = tf->y[y2_index];
+    }
+
+    int y1_index = y2_index - 1;
+    if (y1_index < 0)
+        return NAN;
+    double y1 = tf->y[y1_index];
+
+    int y3_index = y2_index + 1;
+    if (y3_index >= tf->y_size)
+        return NAN;
+    double y3 = tf->y[y3_index];
+
+    int y4_index = y3_index + 1;
+    if (y4_index >= tf->y_size)
+        return NAN;
+    double y4 = tf->y[y4_index];
+
+    double h11 = tf->h[y1_index][x1_index];
+    double h12 = tf->h[y2_index][x1_index];
+    double h13 = tf->h[y3_index][x1_index];
+    double h14 = tf->h[y4_index][x1_index];
+
+    double h21 = tf->h[y1_index][x2_index];
+    double h22 = tf->h[y2_index][x2_index];
+    double h23 = tf->h[y3_index][x2_index];
+    double h24 = tf->h[y4_index][x2_index];
+
+    double h31 = tf->h[y1_index][x3_index];
+    double h32 = tf->h[y2_index][x3_index];
+    double h33 = tf->h[y3_index][x3_index];
+    double h34 = tf->h[y4_index][x3_index];
+
+    double h41 = tf->h[y1_index][x4_index];
+    double h42 = tf->h[y2_index][x4_index];
+    double h43 = tf->h[y3_index][x4_index];
+    double h44 = tf->h[y4_index][x4_index];
+
+    double tx = (x - x2) / (x3 - x2);
+    double h1 = _tf_cubic(h11, h21, h31, h41, tx);
+    double h2 = _tf_cubic(h12, h22, h32, h42, tx);
+    double h3 = _tf_cubic(h13, h23, h33, h43, tx);
+    double h4 = _tf_cubic(h14, h24, h34, h44, tx);
+
+    double ty = (y - y2) / (y3 - y2);
+    double h = _tf_cubic(h1, h2, h3, h4, ty);
 
     return h;
 }

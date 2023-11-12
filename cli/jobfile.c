@@ -48,6 +48,8 @@
 #define FIELD_IMG_DATA_TYPE "out_img_data_type"
 #define FIELD_IMG_DATA_TYPE_S_UNITS "s-units"
 #define FIELD_IMG_DATA_TYPE_LOSS "loss"
+#define FIELD_IMG_DATA_TYPE_TERRAIN "terrain"
+#define FIELD_IMG_DATA_TYPE_CLUTTER "clutter"
 #define FIELD_TERRAIN "data_terrain"
 #define FIELD_CLUTTER "data_clutter"
 
@@ -256,9 +258,13 @@ int _jobfile_set_field(job_parameters_t *job_parameters, c1812_parameters_t *par
             job_parameters->img_data_type = IMG_DATA_TYPE_S_UNITS;
         else if (strcmp(value, FIELD_IMG_DATA_TYPE_LOSS) == EQUAL)
             job_parameters->img_data_type = IMG_DATA_TYPE_LOSS;
+        else if (strcmp(value, FIELD_IMG_DATA_TYPE_TERRAIN) == EQUAL)
+            job_parameters->img_data_type = IMG_DATA_TYPE_TERRAIN;
+        else if (strcmp(value, FIELD_IMG_DATA_TYPE_CLUTTER) == EQUAL)
+            job_parameters->img_data_type = IMG_DATA_TYPE_CLUTTER;
         else
         {
-            fprintf(stderr, "_jobfile_set_field: img_data_type  must be either 's-units' or 'loss', not %s\n", value);
+            fprintf(stderr, "_jobfile_set_field: img_data_type  must be either 's-units', 'loss', 'terrain' or 'clutter', not %s\n", value);
             return EXIT_FAILURE;
         }
     }

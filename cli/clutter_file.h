@@ -9,7 +9,7 @@ typedef struct
 	int x_size;	   // columns
 	double *y;	   // y axis ticks
 	double *x;	   // x axis ticks
-	uint16_t **Ct; // grid of height values, Ct[y][x], [centimeters]
+	uint8_t **Ct; // grid of height values, Ct[y][x], [centimeters]
 } clutter_file_t;
 
 /**
@@ -45,7 +45,7 @@ void cf_free(clutter_file_t *cf);
  *
  * @return Nearest known clutter value.
  */
-uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y);
+double cf_get_nn(clutter_file_t *cf, const double x, const double y);
 
 /**
  * @brief Get bilinearly interpolated clutter to the given x, y coordinates.
@@ -56,6 +56,6 @@ uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y);
  *
  * @return Bilinearly interpolated clutter value.
  */
-uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y);
+double cf_get_bilinear(clutter_file_t *cf, const double x, const double y);
 
 #endif

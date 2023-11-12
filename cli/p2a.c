@@ -1,19 +1,10 @@
 #include "p2a.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+
 #include <pthread.h>
 #include <stdbool.h>
 #include "outfile.h"
 #include "image.h"
 #include "colors.h"
-#include "c1812/calculate.h"
-#include "c1812/sunit.h"
-#include "c1812/rf.h"
-#include "c1812/custom_math.h"
-
-#define KM_M 1000.0
-#define M_CM 100.0
 
 typedef struct
 {
@@ -214,6 +205,8 @@ int output_image(job_parameters_t *job, double **results, double *angles, int an
             }
             break;
             case IMG_DATA_TYPE_LOSS:
+            case IMG_DATA_TYPE_TERRAIN:
+            case IMG_DATA_TYPE_CLUTTER:
                 value = loss;
                 break;
             default:
@@ -328,8 +321,8 @@ void *p2a_thread_func(void *argument)
             t = i / (n - 1.0);
             xi = x1 + (x2 - x1) * t;
             yi = y1 + (y2 - y1) * t;
-            parameters.h[i] = tf_get_bilinear(&tfs[0], xi, yi);
-            parameters.Ct[i] = (double)cf_get_bilinear(&cfs[0], xi, yi) / M_CM;
+            parameters.h[i] = tf_interpolation_func(&tfs[0], xi, yi);
+            parameters.Ct[i] = cf_interpolation_func(&cfs[0], xi, yi) / M_DM;
         }
 
         for (int i = 0; i < 3; i++)
@@ -339,10 +332,19 @@ void *p2a_thread_func(void *argument)
 
         for (int i = n - 1; i >= 3; i--)
         {
-            parameters.n = i;
-            c1812_calculate(&parameters, &results);
             if (results.error == RESULTS_ERR_NONE)
-                thread_argument->results[ai][i] = results.Lb;
+            {
+                if (job->img_data_type == IMG_DATA_TYPE_TERRAIN)
+                    thread_argument->results[ai][i] = parameters.h[i];
+                else if (job->img_data_type == IMG_DATA_TYPE_CLUTTER)
+                    thread_argument->results[ai][i] = parameters.Ct[i];
+                else
+                {
+                    parameters.n = i;
+                    c1812_calculate(&parameters, &results);
+                    thread_argument->results[ai][i] = results.Lb;
+                }
+            }
             else
             {
                 fprintf(stderr, "p2a_thread_func t=%d: calculation error %d\n", thread_argument->thread_id, results.error);

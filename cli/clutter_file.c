@@ -72,7 +72,7 @@ int cf_open(clutter_file_t *cf, const char *path)
 		return EXIT_FAILURE;
 	}
 
-	cf->Ct = malloc(cf->y_size * sizeof(uint16_t *));
+	cf->Ct = malloc(cf->y_size * sizeof(uint8_t *));
 	if (cf->Ct == NULL)
 	{
 		fprintf(stderr, "ctfile_open: malloc(Ct) failed\n");
@@ -84,7 +84,7 @@ int cf_open(clutter_file_t *cf, const char *path)
 
 	for (int y = 0; y < cf->y_size; y++)
 	{
-		cf->Ct[y] = malloc(cf->x_size * sizeof(uint16_t));
+		cf->Ct[y] = malloc(cf->x_size * sizeof(uint8_t));
 		if (cf->Ct[y] == NULL)
 		{
 			fprintf(stderr, "ctfile_open: malloc(Ct[y]) failed\n");
@@ -97,7 +97,7 @@ int cf_open(clutter_file_t *cf, const char *path)
 			return EXIT_FAILURE;
 		}
 
-		if (fread(cf->Ct[y], sizeof(uint16_t), cf->x_size, fp) != cf->x_size)
+		if (fread(cf->Ct[y], sizeof(uint8_t), cf->x_size, fp) != cf->x_size)
 		{
 			fprintf(stderr, "ctfile_open: fread(Ct[y]) failed\n");
 			for (int i = 0; i <= y; i++)
@@ -124,7 +124,7 @@ void cf_free(clutter_file_t *cf)
 	cf_zero(cf);
 }
 
-uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y)
+double cf_get_nn(clutter_file_t *cf, const double x, const double y)
 {
 	int closest_x_index;
 	double closest_x = nneighbor(cf->x, cf->x_size, x, &closest_x_index);
@@ -132,10 +132,10 @@ uint16_t cf_get_nn(clutter_file_t *cf, const double x, const double y)
 	int closest_y_index;
 	double closest_y = nneighbor(cf->y, cf->y_size, y, &closest_y_index);
 
-	return cf->Ct[closest_y_index][closest_x_index];
+	return (double) cf->Ct[closest_y_index][closest_x_index];
 }
 
-uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y)
+double cf_get_bilinear(clutter_file_t *cf, const double x, const double y)
 {
 	int x1_index;
 	double x1 = nneighbor(cf->x, cf->x_size, x, &x1_index);
@@ -180,5 +180,5 @@ uint16_t cf_get_bilinear(clutter_file_t *cf, const double x, const double y)
 	// Find the height at the point
 	double Ct = Ct1 + (Ct2 - Ct1) * (y - y1) / (y2 - y1);
 
-	return (uint16_t)c_round(Ct);
+	return Ct;
 }
